@@ -24,4 +24,4 @@ Multipass is released under the [MIT License](https://github.com/peeramid/multip
 
 ## Contact
 
-If you have any questions or feedback regarding Multipass, please reach out to us at [contact@multipass.io](mailto:contact@multipass.io).
+If you have any security findings, questions or feedback regarding Multipass, please reach out to us at [contracts@peeramid.xyz](mailto:contracts@peeramid.xyz).
