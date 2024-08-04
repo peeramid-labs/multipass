@@ -1,6 +1,6 @@
 {
-  "name": "@peeramid-labs/multipass-contracts",
-  "version": "1.0.0",
+  "name": "@peeramid/multipass-contracts",
+  "version": "0.1.0",
   "files": [
     "abi",
     "deployments",
