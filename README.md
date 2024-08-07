@@ -1,6 +1,6 @@
 # Multipass
 
-Multipass is a universal open source protocol designed to facilitate frictionless user verification and transparent end user verification flow between platforms.
+Multipass is a universal open source protocol designed to facilitate frictionless user verification and cross-platform public data exchange based on public signing key notion.
 
 ## Introduction
 
