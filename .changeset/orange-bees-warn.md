@@ -1,5 +1,5 @@
 ---
-"@peeramid-labs/solidity-mkdocs": patch
+"solidity-mkdocs": patch
 ---
 
 initial commit

@@ -1,7 +1,9 @@
 {
-  "name": "@peeramid-labs/solidity-mkdocs",
+  "name": "solidity-mkdocs",
   "version": "0.0.0",
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "description": "Generate MKDocs documentation from Solidity files",
   "scripts": {
     "version": "changeset version",
