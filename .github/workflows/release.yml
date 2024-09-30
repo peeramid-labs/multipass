@@ -22,8 +22,6 @@ jobs:
       - uses: './.github/setup'
       - name: install dependencies
         run: pnpm install
-      - name: generate docs
-        run: pnpm hardhat docgen
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
