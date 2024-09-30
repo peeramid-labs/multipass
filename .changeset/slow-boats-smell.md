@@ -1,5 +1,5 @@
 ---
-'@peeramid/multipass-contracts': minor
+'@peeramid-labs/multipass': minor
 ---
 
 initial release
