@@ -3,7 +3,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "@peeramid-labs/mkdocs-docgen"
+      "repo": "@peeramid-labs/solidity-mkdocs"
     }
   ],
   "commit": false,
