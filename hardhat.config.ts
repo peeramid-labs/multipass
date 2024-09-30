@@ -47,7 +47,7 @@ export default {
   docgen: {
     outputDir: './docs/contracts',
     pages: 'files',
-    templates: 'docs/templates',
+    templates: 'docs/templates/src',
     sourcesDir: './src',
     pageExtension: '.md',
     exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures'],
