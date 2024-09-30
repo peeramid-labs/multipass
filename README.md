@@ -8,7 +8,7 @@ Simply configure in your `hardhat.config.ts` file:
  docgen: {
     outputDir: './docs/contracts',
     pages: 'files',
-    templates: 'node_modules/@peeramid-labs/solidity-mkdocs', // << This is the path to this project
+    templates: 'node_modules/solidity-mkdocs', // << This is the path to this project
     sourcesDir: './src',
     pageExtension: '.md',
     exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures'],

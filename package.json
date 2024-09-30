@@ -1,6 +1,10 @@
 {
   "name": "solidity-mkdocs",
   "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peeramid-labs/solidity-mkdocs"
+  },
   "files": [
     "src"
   ],
