@@ -3,7 +3,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "rankify-it/contracts"
+      "repo": "peeramid-labs/multipass"
     }
   ],
   "commit": false,

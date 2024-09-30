@@ -1,5 +1,5 @@
 {
-  "name": "@peeramid/multipass-contracts",
+  "name": "@peeramid-labs/multipass",
   "version": "0.1.0",
   "files": [
     "abi",

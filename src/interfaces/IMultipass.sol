@@ -204,7 +204,6 @@ interface IMultipass {
     /**
      * @dev returns price for registering name
      *
-     * @return price
      */
     event fundsWithdawn(uint256 indexed amount, address indexed account);
 
