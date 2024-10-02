@@ -23,7 +23,7 @@ Multipass is a universal, decentralized, open source protocol designed to facili
 
 We are workin on setting up a token and deploying governing body as a DAO. 
 
-If you want to be up to date and not miss the date, please 
+If you want to be up to date and not miss a thiing, please 
 - subscribe to our twitter: https://x.com/peeramid_labs
 - join our discord: https://discord.gg/EddGgGUuWC 
 
