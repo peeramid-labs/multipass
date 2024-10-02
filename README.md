@@ -1,18 +1,23 @@
 # Multipass
 
-Multipass is a universal open source protocol designed to facilitate frictionless user verification and cross-platform public data exchange based on public signing key notion.
+Multipass is a universal, decentralized, open source protocol designed to facilitate public identity trough a frictionless cross-domain user data lookup. 
 
-## Introduction
+![multipass-logo-512](https://github.com/user-attachments/assets/72625d2b-c195-4ee2-b278-5b27e6330625)
 
-In today's digital landscape, user may have numerous accounts across different platforms, each requiring them to verify their identity. Whenever someone tries to find same user on different platforms, they do not have united way to query for the user. This leads to a fragmented user experience, where users are forced to repeatedly verify their identity on different platforms, which can be cumbersome and time-consuming.
 
-## Features
+**With multipass you are able to answer following questions**
+- _"What's @Bob at telegram handle on discord"? _
+- _"I just saw an activity by `0xdeadcafee...101` for my dApp, what's handle of user on @discord?_
+- _"What's @Bob EOA wallet on EVM?_
 
-- **Universal Protocol**: Multipass is a universal protocol that enables platforms to seamlessly verify users across different platforms.
-- **Mutated usernames**: Multipass supports that many platforms allow users to change their usernames. Multipass supports this by allowing platforms to query user by either immutable id or mutable username.
-- **Reverse Lookup**: Multipass supports reverse lookup, which allows platforms to query for the user by their Multipass ID.
-- **Eth Address Verification**: Multipass supports verification of user's Ethereum address.
-- **Cross Platform Lookup**: Multipass supports cross platform lookup, which allows platforms to query for the user by their Multipass ID across different platforms.
+**Use cases**
+
+- **Cross platform social graph**: See social graph beyond your platform. 
+- **Anti-bot measures**: require users to verify on other platforms
+- **Cross platform anti-fraud measures**: Get notified if other platforms ban users
+- **Build great UX for web3 app**: No longer address names in event noficiations. Tag your users instead!
+- **Off-chain account abstraction**": Your service may use web2 auth tokens or signed messages from your platform to associate it with registred account on chain. E.g pay users transaction and use web2 signed message as paymaster validation proof.
+- **Create token gated access to your identity**: Imagine you have a public twitter account. We can associate your 
 
 ## Contributing
 
