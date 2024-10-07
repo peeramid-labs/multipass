@@ -8,13 +8,13 @@ import "../libraries/LibMultipass.sol";
 import "../modifiers/OnlyOwnerDiamond.sol";
 import "hardhat/console.sol";
 import "../vendor/diamond/facets/OwnershipFacet.sol";
-
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /**
  * @title Multipass
  * @dev This contract implements various functions related to the management of domain names and registration records.
  */
-contract Multipass is EIP712, IMultipass {
+contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
     using ECDSA for bytes32;
     using LibMultipass for bytes32;
 
@@ -93,7 +93,7 @@ contract Multipass is EIP712, IMultipass {
             "Multipass->initializeDomain: Domain name already exists"
         );
         (bool status, uint256 result) = Math.tryAdd(referrerReward, referralDiscount);
-        require(status == true, "Multipass->initializeDomain: referrerReward + referralDiscount overflow");
+        require(status, "Multipass->initializeDomain: referrerReward + referralDiscount overflow");
         require(result <= fee, "Multipass->initializeDomain: referral values are higher then fee itself");
 
         LibMultipass._initializeDomain(
@@ -204,7 +204,7 @@ contract Multipass is EIP712, IMultipass {
         uint256 signatureDeadline,
         LibMultipass.NameQuery memory referrer,
         bytes memory referralCode
-    ) public payable override {
+    ) public payable override nonReentrant {
         _enforseDomainNameIsValid(domainName);
         _validateRegistration(newRecord, domainName, registrarSignature, signatureDeadline);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
@@ -223,10 +223,8 @@ contract Multipass is EIP712, IMultipass {
                 _isValidSignature(refferalMessage, referralCode, referrerRecord.wallet),
                 "Multipass->register: Referral code is not valid"
             );
-            require(
-                payable(referrerRecord.wallet).send(referrersShare),
-                "Multipass->register: Failed to send referral reward"
-            );
+            (bool success, ) = payable(referrerRecord.wallet).call{value: referrersShare}("");
+            require(success, "Multipass->register: Failed to send referral reward");
             require(referrerRecord.wallet != newRecord.wallet, "Cannot refer yourself");
             emit Referred(referrerRecord, newRecord, domainName);
         }
@@ -260,7 +258,7 @@ contract Multipass is EIP712, IMultipass {
         LibMultipass.Record memory newRecord = userRecord;
         bytes32 oldName = newRecord.name;
         newRecord.name = newName;
-        require(userExists == true, "user does not exist, use register() instead");
+        require(userExists, "user does not exist, use register() instead");
         bytes memory registrarMessage = abi.encode(
             LibMultipass._TYPEHASH,
             newRecord.name,
