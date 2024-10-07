@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
@@ -10,10 +10,10 @@ import "hardhat/console.sol";
 import "../vendor/diamond/facets/OwnershipFacet.sol";
 
 
- /**
-  * @title Multipass
-  * @dev This contract implements various functions related to the management of domain names and registration records.
-*/
+/**
+ * @title Multipass
+ * @dev This contract implements various functions related to the management of domain names and registration records.
+ */
 contract Multipass is EIP712, IMultipass {
     using ECDSA for bytes32;
     using LibMultipass for bytes32;
@@ -106,7 +106,6 @@ contract Multipass is EIP712, IMultipass {
         );
         emit InitializedDomain(registrar, freeRegistrationsNumber, fee, domainName, referrerReward, referralDiscount);
     }
-
 
     function _enforseDomainNameIsValid(bytes32 domainName) private view {
         require(domainName._checkNotEmpty(), "activateDomain->Please specify LibMultipass.Domain name");
@@ -287,7 +286,6 @@ contract Multipass is EIP712, IMultipass {
         emit UserRecordModified(newRecord, oldName, domainName);
     }
 
-
     /// @inheritdoc IMultipass
     function getBalance() external view override returns (uint256) {
         return address(this).balance;
@@ -305,14 +303,14 @@ contract Multipass is EIP712, IMultipass {
         return _domain.properties;
     }
 
-
     /// @inheritdoc IMultipass
     function getContractState() external view override returns (uint256) {
         return LibMultipass._getContractState();
     }
 
     /// @inheritdoc IMultipass
-    function withrawFunds(address to) public override onlyOwner {
-        payable(to).transfer(address(this).balance);
+    function withdrawFunds(address to) public onlyOwner {
+        (bool success, ) = payable(to).call{value: address(this).balance}("");
+        require(success, "Transfer failed");
     }
 }

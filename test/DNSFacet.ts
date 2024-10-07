@@ -182,7 +182,7 @@ describe(scriptName, () => {
   });
   it('Reverts any ownerOnly call by not an owner', async () => {
     await expect(
-      env.multipass.connect(adr.maliciousActor1.wallet).withrawFunds(adr.maliciousActor1.wallet.address),
+      env.multipass.connect(adr.maliciousActor1.wallet).withdrawFunds(adr.maliciousActor1.wallet.address),
     ).to.be.revertedWith('LibDiamond: Must be contract owner');
     await expect(
       env.multipass
@@ -841,7 +841,7 @@ describe(scriptName, () => {
               ),
           ).to.emit(env.multipass, 'Registered');
           await expect(
-            await env.multipass.connect(adr.multipassOwner.wallet).withrawFunds(adr.multipassOwner.wallet.address),
+            await env.multipass.connect(adr.multipassOwner.wallet).withdrawFunds(adr.multipassOwner.wallet.address),
           ).to.changeEtherBalance(adr.multipassOwner.wallet, DEFAULT_FEE);
         });
         it('Should revert register if not enough ether', async () => {

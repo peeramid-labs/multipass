@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
 import "../libraries/LibMultipass.sol";
 
@@ -192,7 +192,7 @@ interface IMultipass {
      *
      *  Emits an {fundsWithdawn} event.
      */
-    function withrawFunds(address to) external;
+    function withdrawFunds(address to) external;
 
     /**
      * @dev returns price for modifying name
