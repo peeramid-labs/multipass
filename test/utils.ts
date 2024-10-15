@@ -6,17 +6,17 @@ import hre, { deployments } from 'hardhat';
 import aes from 'crypto-js/aes';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { MockERC20, MultipassDiamond } from '../types';
+import { Multipass } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { MultipassJs } from '../utils/multipass';
-import { LibMultipass } from '../types/src/facets/DNSFacet';
 import { JsonFragment } from '@ethersproject/abi';
 import fs from 'fs';
 import path from 'path';
+import { LibMultipass } from '../types/src/Multipass';
 
 export const MULTIPASS_CONTRACT_NAME = 'MultipassDNS';
 export const MULTIPASS_CONTRACT_VERSION = '0.0.1';
@@ -61,8 +61,7 @@ export interface AdrSetupResult {
 }
 
 export interface EnvSetupResult {
-  multipass: MultipassDiamond;
-  mockERC20: MockERC20;
+  multipass: Multipass;
 }
 export const addPlayerNameId = (idx: any) => {
   return { name: `player-${idx}`, id: `player-${idx}-id` };
@@ -275,13 +274,9 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     value: _eth.utils.parseEther('1'),
   });
   await deployments.fixture(['multipass']);
-  const MockERC20F = await _eth.getContractFactory('MockERC20', adr.contractDeployer.wallet);
-  const mockERC20 = (await MockERC20F.deploy('Mock ERC20', 'MCK20', adr.contractDeployer.wallet.address)) as MockERC20;
-  await mockERC20.deployed();
 
   const env = await setupEnvironment({
     multipass: await deployments.get('Multipass'),
-    mockERC20: mockERC20,
     adr,
   });
 
@@ -292,15 +287,13 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
 });
 // export const setupTest = () => setupTest();
 export const setupEnvironment = async (setup: {
-  mockERC20: MockERC20;
   multipass: Deployment;
   adr: AdrSetupResult;
 }): Promise<EnvSetupResult> => {
-  const multipass = (await ethers.getContractAt(setup.multipass.abi, setup.multipass.address)) as MultipassDiamond;
+  const multipass = (await ethers.getContractAt(setup.multipass.abi, setup.multipass.address)) as Multipass;
 
   return {
     multipass,
-    mockERC20: setup.mockERC20,
   };
 };
 

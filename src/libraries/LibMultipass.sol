@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 library LibMultipass {
@@ -28,7 +28,6 @@ library LibMultipass {
      * @dev The domain name of the registrar.
      * @param registrar is the address private key of which is owned by signing server (e.g. Discord bot server)
      * @param name is unique string that is used to find this domain within domains.
-     * @param freeRegistrationsNumber is the number of free registrations for this domain
 
      * @param fee amount of payment requried to register name in the domain
      * @param ttl time to live for changes in the domain properties
@@ -37,7 +36,6 @@ library LibMultipass {
     struct Domain {
         bytes32 name; //32bytes
         uint256 fee; //32bytes
-        uint256 freeRegistrationsNumber; //32bytes
         uint256 referrerReward; //32bytes
         uint256 referralDiscount; //32bytes
         bool isActive; //1byte
@@ -113,13 +111,7 @@ library LibMultipass {
         keccak256("registerName(bytes32 name,bytes32 id,bytes32 domainName,uint256 deadline,uint96 nonce)");
     bytes32 internal constant _TYPEHASH_REFERRAL = keccak256("proofOfReferrer(address referrerAddress)");
 
-    function _checkStringFits32b(string memory value) internal pure returns (bool) {
-        if (bytes(value).length <= 32) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+
 
     function _checkNotEmpty(bytes32 value) internal pure returns (bool) {
         if (value == "") {
@@ -148,7 +140,6 @@ library LibMultipass {
 
     function _initializeDomain(
         address registrar,
-        uint256 freeRegistrationsNumber,
         uint256 fee,
         bytes32 domainName,
         uint256 referrerReward,
@@ -159,7 +150,6 @@ library LibMultipass {
         uint256 domainIndex = ms.numDomains + 1;
         LibMultipass.DomainStorage storage _domain = ms.domains[domainIndex];
         _domain.properties.registrar = registrar;
-        _domain.properties.freeRegistrationsNumber = freeRegistrationsNumber;
         _domain.properties.fee = fee;
         _domain.properties.name = domainName;
         _domain.properties.referrerReward = referrerReward;
@@ -256,13 +246,6 @@ library LibMultipass {
         return _query;
     }
 
-    /**
-     * @dev Checks if user should register for free.
-     * @param domain The wallet to resolve the query for.
-     */
-    function shouldRegisterForFree(DomainStorage storage domain) internal view returns (bool) {
-        return domain.properties.freeRegistrationsNumber > domain.properties.registerSize ? true : false;
-    }
 
     function _registerNew(Record memory newRecord, DomainStorage storage domain) internal {
         _setRecord(domain, newRecord);

@@ -1,9 +1,39 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "../libraries/LibMultipass.sol";
 
 interface IMultipass {
+
+    enum InvalidQueryReasons {
+        EMPTY_ID,
+        EMPTY_DOMAIN,
+        EMPTY_ADDRESS
+    }
+
+
+    error invalidQuery(InvalidQueryReasons reason);
+    error nameExists(bytes32 name);
+    error recordExists(LibMultipass.Record newRecord);
+    error isActive(bytes32 name, bool isActive);
+    error signatureExpired(uint256 signatureDeadline);
+    error invalidSignature();
+    error mathOverflow(uint256 a, uint256 b);
+    error invalidDomain(bytes32 domainName);
+    error referralRewardsTooHigh(uint256 referrerReward, uint256 referralDiscount, uint256 fee);
+    error invalidRegistrar(address registrar);
+    error paymentTooLow(uint256 fee, uint256 value);
+    error paymendFailed();
+    error referredSelf();
+    error domainNotActive(bytes32 domainName);
+    error userNotFound(LibMultipass.NameQuery query);
+    error invalidnameChange(bytes32 domainName, bytes32 newName);
+    error invalidNonce(uint256 nonce);
+
+
+
+
+
 
     /**
      * @dev Retrieves the resolved record for a given name query.
@@ -27,7 +57,6 @@ interface IMultipass {
      *  onlyOwner
      *  referrerReward+referralDiscount cannot be larger than fee
      *  @param registrar address of registrar
-     *  @param freeRegistrationsNumber number of registrations free of fee
      *  @param fee fee in base currency of network
      *  @param domainName name of LibMultipass.Domain
      *  @param referrerReward referral fee share in base currency of network
@@ -37,7 +66,6 @@ interface IMultipass {
      */
     function initializeDomain(
         address registrar,
-        uint256 freeRegistrationsNumber,
         uint256 fee,
         bytes32 domainName,
         uint256 referrerReward,
@@ -112,7 +140,6 @@ interface IMultipass {
     function changeReferralProgram(
         uint256 referrerFeeShare,
         uint256 referralDiscount,
-        uint256 freeRegistrations,
         bytes32 domainName
     ) external;
 
@@ -157,17 +184,12 @@ interface IMultipass {
         uint256 signatureDeadline
     ) external payable;
 
-    /**
-     * @dev returns balance of this contract
-     */
-    function getBalance() external view returns (uint256);
 
     /**
      * @dev returns LibMultipass.Domain state variables
      * @param domainName name of the LibMultipass.Domain
      * @return (name,
       fee,
-      freeRegistrationsNumber,
        referrerReward,
        referralDiscount,
        isActive,
@@ -184,15 +206,6 @@ interface IMultipass {
      */
     function getContractState() external view returns (uint256);
 
-    /**
-     * @dev Withraws funds stored in smart contract
-     *
-     * Requirements:
-     *  onlyOwner
-     *
-     *  Emits an {fundsWithdawn} event.
-     */
-    function withdrawFunds(address to) external;
 
     /**
      * @dev returns price for modifying name
@@ -210,7 +223,6 @@ interface IMultipass {
     /**
      * @dev Initializes a new domain with the specified parameters.
      * @param registrar The address of the registrar for the domain.
-     * @param freeRegistrationsNumber The number of free registrations allowed for the domain.
      * @param fee The fee required for registration in the domain.
      * @param domainName The name of the domain.
      * @param referrerReward The reward for referring new registrations to the domain.
@@ -218,7 +230,6 @@ interface IMultipass {
      */
     event InitializedDomain(
         address indexed registrar,
-        uint256 freeRegistrationsNumber,
         uint256 indexed fee,
         bytes32 indexed domainName,
         uint256 referrerReward,
@@ -245,18 +256,11 @@ interface IMultipass {
     event DomainFeeChanged(bytes32 indexed domainName, uint256 indexed newFee);
 
     /**
-     * @dev Emitted when the number of free registrations for a domain is changed.
-     * @param domainIndex The index of the domain.
-     * @param newAmount The new number of free registrations for the domain.
-     */
-    event FreeRegistrationsChanged(uint256 indexed domainIndex, uint256 indexed newAmount);
-
-    /**
      * @dev Emitted when a registrar change is requested for a domain.
      * @param domainName The name of the domain.
      * @param registrar The address of the new registrar.
      */
-    event RegistrarChangeRequested(bytes32 indexed domainName, address indexed registrar);
+    event RegistrarChanged(bytes32 indexed domainName, address indexed registrar);
 
     /**
      * @dev Emitted when a domain name change is requested.
@@ -286,13 +290,11 @@ interface IMultipass {
      * @param domainName The domain name.
      * @param reward The referral reward amount.
      * @param discount The referral discount amount.
-     * @param freeNumber The number of free referrals.
      */
     event ReferralProgramChanged(
         bytes32 indexed domainName,
         uint256 reward,
-        uint256 discount,
-        uint256 indexed freeNumber
+        uint256 discount
     );
 
     /**

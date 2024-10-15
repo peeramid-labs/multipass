@@ -1,3 +1,4 @@
+import 'solidity-coverage';
 import { task } from 'hardhat/config';
 import '@nomicfoundation/hardhat-chai-matchers';
 import '@nomicfoundation/hardhat-toolbox';
@@ -89,7 +90,7 @@ export default {
   solidity: {
     compilers: [
       {
-        version: '0.8.20',
+        version: '0.8.28',
         settings: {
           optimizer: {
             enabled: true,
