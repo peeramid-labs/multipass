@@ -43,7 +43,6 @@ task('initializeDomain', 'Initialize domain name and activate it')
       const tx = await multipassContract.initializeDomain(
         registrarAddress,
         freeRegistrationsNumber,
-        hre.ethers.utils.parseEther(fee),
         hre.ethers.utils.formatBytes32String(domain),
         hre.ethers.utils.parseEther(reward),
         hre.ethers.utils.parseEther(discount),
