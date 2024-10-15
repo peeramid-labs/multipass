@@ -2,14 +2,12 @@
 pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-// import "../abstracts/draft-EIP712Diamond.sol";
-import "../interfaces/IMultipass.sol";
-import "../libraries/LibMultipass.sol";
-// import "../vendor/diamond/facets/OwnershipFacet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import "./interfaces/IMultipass.sol";
+import "./libraries/LibMultipass.sol";
 /**
  * @title Multipass
  * @dev This contract implements various functions related to the management of domain names and registration records.
