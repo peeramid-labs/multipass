@@ -69,6 +69,7 @@ export function transformDev(comment: string): string {
   // Initialize variables to store the transformed text
   let transformedText = "";
   let isWarning = false;
+  let isFirstNotice = true;
   let noticeBlock = "";
 
   // Iterate over each line
