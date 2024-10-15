@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { IMultipass__factory } from '../types';
 const path = require('path');
-import { LibMultipass } from '../types/src/facets/DNSFacet';
+import { LibMultipass } from '../types/src/facets/Multipass';
 
 const scriptName = path.basename(__filename);
 const NEW_DOMAIN_NAME1 = 'newDomainName1';
@@ -44,7 +44,7 @@ describe(scriptName, () => {
 
     await expect(
       env.multipass.connect(adr.maliciousActor1.wallet).transferOwnership(adr.gameCreator1.wallet.address),
-    ).to.revertedWith('LibDiamond: Must be contract owner');
+    ).to.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
   });
   it('Has zero domains', async () => {
     expect(await env.multipass.getContractState()).to.be.equal(0);
@@ -183,7 +183,7 @@ describe(scriptName, () => {
   it('Reverts any ownerOnly call by not an owner', async () => {
     await expect(
       env.multipass.connect(adr.maliciousActor1.wallet).withdrawFunds(adr.maliciousActor1.wallet.address),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     await expect(
       env.multipass
         .connect(adr.maliciousActor1.wallet)
@@ -193,24 +193,24 @@ describe(scriptName, () => {
           DEFAULT_DISCOUNT,
           ethers.utils.formatBytes32String(''),
         ),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
-    await expect(env.multipass.connect(adr.maliciousActor1.wallet).deleteName(emptyUserQuery)).to.be.revertedWith(
-      'LibDiamond: Must be contract owner',
-    );
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
+    await expect(
+      env.multipass.connect(adr.maliciousActor1.wallet).deleteName(emptyUserQuery),
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     await expect(
       env.multipass
         .connect(adr.maliciousActor1.wallet)
         .changeRegistrar(ethers.utils.formatBytes32String(''), adr.maliciousActor1.wallet.address),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     await expect(
       env.multipass.connect(adr.maliciousActor1.wallet).changeFee(ethers.utils.formatBytes32String(''), DEFAULT_FEE),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     await expect(
       env.multipass.connect(adr.maliciousActor1.wallet).activateDomain(ethers.utils.formatBytes32String('')),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     await expect(
       env.multipass.connect(adr.maliciousActor1.wallet).deactivateDomain(ethers.utils.formatBytes32String('')),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     await expect(
       env.multipass
         .connect(adr.maliciousActor1.wallet)
@@ -222,7 +222,7 @@ describe(scriptName, () => {
           DEFAULT_REWARD,
           DEFAULT_DISCOUNT,
         ),
-    ).to.be.revertedWith('LibDiamond: Must be contract owner');
+    ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
   });
   describe('When a new domain was initialized', () => {
     let numDomains = 0;

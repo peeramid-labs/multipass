@@ -2,25 +2,40 @@
 pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "../abstracts/draft-EIP712Diamond.sol";
+// import "../abstracts/draft-EIP712Diamond.sol";
 import "../interfaces/IMultipass.sol";
 import "../libraries/LibMultipass.sol";
-import "../modifiers/OnlyOwnerDiamond.sol";
-import "hardhat/console.sol";
-import "../vendor/diamond/facets/OwnershipFacet.sol";
+// import "../vendor/diamond/facets/OwnershipFacet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 /**
  * @title Multipass
  * @dev This contract implements various functions related to the management of domain names and registration records.
  */
-contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
+contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+
     using ECDSA for bytes32;
     using LibMultipass for bytes32;
 
     // using LibMultipass for LibMultipass.Record;
     using LibMultipass for LibMultipass.Record;
     using LibMultipass for bytes;
+
+       function _buildDomainSeparator(
+        bytes32 typeHash,
+        bytes32 nameHash,
+        bytes32 versionHash
+    ) private view returns (bytes32) {
+        return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
+    }
+
+    function initialize(string memory name, string memory version, address owner) external initializer {
+        __Ownable_init(owner);
+        __EIP712_init(name, version);
+    }
+
 
     function _isValidSignature(
         bytes memory message,
@@ -48,7 +63,7 @@ contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
 
         //Check query does not resolves (name already exists)
         (bool nameExists, ) = LibMultipass.resolveRecord(query);
-        require(nameExists == false, "User already registered, use modify instead");
+        require(!nameExists, "User already registered, use modify instead");
         //Check LibMultipass.Domain is legit
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(query.domainName);
         require(_domain.properties.isActive, "Multipass->register: domain is not active");
@@ -73,7 +88,7 @@ contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
         }
         {
             (bool status, ) = LibMultipass.resolveRecord(query);
-            require(status == false, "Multipass->register: applicant is already registered, use modify instread");
+            require(!status, "Multipass->register: applicant is already registered, use modify instread");
         }
     }
 
@@ -157,7 +172,7 @@ contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(query.domainName);
         query.targetDomain = "";
         (bool status, LibMultipass.Record memory r) = resolveRecord(query);
-        require(status == true, "Multipass->deleteName: name not resolved");
+        require(status, "Multipass->deleteName: name not resolved");
         _domain.addressToId[r.wallet] = bytes32(0);
         _domain.idToAddress[r.id] = address(0);
         _domain.idToName[r.id] = bytes32(0);
@@ -178,7 +193,7 @@ contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
         _enforseDomainNameIsValid(domainName);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
         (bool status, uint256 result) = Math.tryAdd(referrerReward, referralDiscount);
-        require(status == true, "Multipass->changeReferralProgram: referrerReward + referralDiscount overflow");
+        require(status, "Multipass->changeReferralProgram: referrerReward + referralDiscount overflow");
         require(
             result <= _domain.properties.fee,
             "Multipass->changeReferralProgram: referral values are higher then the fee itself"
@@ -232,7 +247,7 @@ contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
     /// @inheritdoc IMultipass
     function getModifyPrice(LibMultipass.NameQuery memory query) public view override returns (uint256) {
         (bool userExists, LibMultipass.Record memory record) = LibMultipass.resolveRecord(query);
-        require(userExists == true, "getModifyPrice->user not found ");
+        require(userExists, "getModifyPrice->user not found ");
         return LibMultipass._getModifyPrice(record);
     }
 
@@ -311,4 +326,9 @@ contract Multipass is EIP712, IMultipass, ReentrancyGuardUpgradeable {
         (bool success, ) = payable(to).call{value: address(this).balance}("");
         require(success, "Transfer failed");
     }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    return interfaceId == type(IMultipass).interfaceId || super.supportsInterface(interfaceId);
+}
+
 }
