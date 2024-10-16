@@ -4,13 +4,11 @@ pragma solidity ^0.8.28;
 import "../libraries/LibMultipass.sol";
 
 interface IMultipass {
-
     enum InvalidQueryReasons {
         EMPTY_ID,
         EMPTY_DOMAIN,
         EMPTY_ADDRESS
     }
-
 
     error invalidQuery(InvalidQueryReasons reason);
     error nameExists(bytes32 name);
@@ -30,11 +28,6 @@ interface IMultipass {
     error invalidnameChange(bytes32 domainName, bytes32 newName);
     error invalidNonce(uint256 nonce);
 
-
-
-
-
-
     /**
      * @dev Retrieves the resolved record for a given name query.
      * @param query The name query to resolve.
@@ -43,8 +36,6 @@ interface IMultipass {
     function resolveRecord(
         LibMultipass.NameQuery memory query
     ) external view returns (bool, LibMultipass.Record memory);
-
-
 
     /**
      * @dev Initializes new LibMultipass.Domain and configures it's parameters
@@ -137,11 +128,7 @@ interface IMultipass {
      *
      *  Emits an {ReferralProgramChangeRequested} event.
      */
-    function changeReferralProgram(
-        uint256 referrerFeeShare,
-        uint256 referralDiscount,
-        bytes32 domainName
-    ) external;
+    function changeReferralProgram(uint256 referrerFeeShare, uint256 referralDiscount, bytes32 domainName) external;
 
     /**
      * @dev registers new name under LibMultipass.Domain
@@ -184,7 +171,6 @@ interface IMultipass {
         uint256 signatureDeadline
     ) external payable;
 
-
     /**
      * @dev returns LibMultipass.Domain state variables
      * @param domainName name of the LibMultipass.Domain
@@ -205,7 +191,6 @@ interface IMultipass {
      * @return (s_numDomains)
      */
     function getContractState() external view returns (uint256);
-
 
     /**
      * @dev returns price for modifying name
@@ -291,11 +276,7 @@ interface IMultipass {
      * @param reward The referral reward amount.
      * @param discount The referral discount amount.
      */
-    event ReferralProgramChanged(
-        bytes32 indexed domainName,
-        uint256 reward,
-        uint256 discount
-    );
+    event ReferralProgramChanged(bytes32 indexed domainName, uint256 reward, uint256 discount);
 
     /**
      * @dev Emitted when domain changes are live.

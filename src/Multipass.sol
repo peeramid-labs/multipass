@@ -94,13 +94,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         require(status, mathOverflow(referrerReward, referralDiscount));
         require(result <= fee, referralRewardsTooHigh(referrerReward, referralDiscount, fee));
 
-        LibMultipass._initializeDomain(
-            registrar,
-            fee,
-            domainName,
-            referrerReward,
-            referralDiscount
-        );
+        LibMultipass._initializeDomain(registrar, fee, domainName, referrerReward, referralDiscount);
         emit InitializedDomain(registrar, fee, domainName, referrerReward, referralDiscount);
     }
 

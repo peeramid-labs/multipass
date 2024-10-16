@@ -51,7 +51,7 @@ library LibMultipass {
      * @param id is the unique identificator of the user
      * @param nonce is the number of changes in the user record
      * @param domainName is the domain name of the registrar
-    **/
+     **/
     struct Record {
         address wallet;
         bytes32 name;
@@ -59,8 +59,6 @@ library LibMultipass {
         uint96 nonce;
         bytes32 domainName;
     }
-
-
 
     bytes32 constant MULTIPASS_STORAGE_POSITION = keccak256("multipass.diamond.storage.position");
 
@@ -84,7 +82,6 @@ library LibMultipass {
         mapping(bytes32 => bytes32) idToName; //N*32 bytes
         //Total: 128+N*160 Bytes
     }
-
 
     /**
      * @dev The storage structure for the Multipass contract.
@@ -111,8 +108,6 @@ library LibMultipass {
         keccak256("registerName(bytes32 name,bytes32 id,bytes32 domainName,uint256 deadline,uint96 nonce)");
     bytes32 internal constant _TYPEHASH_REFERRAL = keccak256("proofOfReferrer(address referrerAddress)");
 
-
-
     function _checkNotEmpty(bytes32 value) internal pure returns (bool) {
         if (value == "") {
             return false;
@@ -120,7 +115,6 @@ library LibMultipass {
             return true;
         }
     }
-
 
     /**
      * @dev Resolves the index of a domain name in the Multipass storage.
@@ -245,7 +239,6 @@ library LibMultipass {
         _query.wallet = _record.wallet;
         return _query;
     }
-
 
     function _registerNew(Record memory newRecord, DomainStorage storage domain) internal {
         _setRecord(domain, newRecord);
