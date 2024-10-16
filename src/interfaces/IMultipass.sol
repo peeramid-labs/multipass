@@ -7,7 +7,7 @@ import {LibMultipass} from "../libraries/LibMultipass.sol";
  * @title IMultipass
  * @notice Interface for the Multipass contract. Multipass contract acts as cross-domain registry, allowing owner to specify registrars and domains that can be used to register names.
  * It also allows for referral program, where referrers can earn rewards for referring new registrations.
- *
+ * @custom:security-contact sirt@peeramid.xyz
  */
 interface IMultipass {
     enum InvalidQueryReasons {

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  *
  * This library provides a set of functions to manage and utilize multipass features.
  * It is designed to be used as a part of the multipass system within the project.
+ * @custom:security-contact sirt@peeramid.xyz
  */
 library LibMultipass {
     /**
