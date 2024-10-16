@@ -1,6 +1,3 @@
- 
- 
- 
 // import { time } from "@openzeppelin/test-helpers";
 import hre, { deployments } from 'hardhat';
 import aes from 'crypto-js/aes';
@@ -471,21 +468,31 @@ export const signReferralCode = async (message: ReferrerMessage, verifierAddress
   return s;
 };
 
-export const getUserRegisterProps = async (
-  account: SignerIdentity,
-  registrar: SignerIdentity,
-  domainName: string,
-  deadline: number,
-  multipassAddress: string,
-  referrer?: SignerIdentity,
-  referrerDomain?: string,
-) => {
+export const getUserRegisterProps = async ({
+  account,
+  registrar,
+  domainName,
+  deadline,
+  multipassAddress,
+  referrer,
+  referrerDomain,
+  nonce,
+}: {
+  account: SignerIdentity;
+  registrar: SignerIdentity;
+  domainName: string;
+  deadline: number;
+  multipassAddress: string;
+  referrer?: SignerIdentity;
+  referrerDomain?: string;
+  nonce?: number;
+}) => {
   const registrarMessage = {
     name: ethers.utils.formatBytes32String(account.name + `.` + domainName),
     id: ethers.utils.formatBytes32String(account.id + `.` + domainName),
     domainName: ethers.utils.formatBytes32String(domainName),
     deadline: ethers.BigNumber.from(deadline),
-    nonce: ethers.BigNumber.from(0),
+    nonce: ethers.BigNumber.from(nonce ?? 0),
   };
 
   const validSignature = await signRegistrarMessage(registrarMessage, multipassAddress, registrar);
@@ -494,8 +501,9 @@ export const getUserRegisterProps = async (
     name: ethers.utils.formatBytes32String(account.name + `.` + domainName),
     id: ethers.utils.formatBytes32String(account.id + `.` + domainName),
     wallet: account.wallet.address,
-    nonce: 0,
+    nonce: ethers.BigNumber.from(nonce ?? 0),
     domainName: ethers.utils.formatBytes32String(domainName),
+    validUntil: ethers.BigNumber.from(deadline),
   };
 
   const referrerData: LibMultipass.NameQueryStruct = {

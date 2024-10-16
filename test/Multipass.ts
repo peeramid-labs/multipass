@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { IMultipass__factory } from '../types';
 const path = require('path');
-import { LibMultipass } from '../types/src/facets/Multipass';
+import { LibMultipass } from '../types/src/Multipass';
 
 const scriptName = path.basename(__filename);
 const NEW_DOMAIN_NAME1 = 'newDomainName1';
@@ -16,7 +16,7 @@ const FEE_AFTER_CHANGE = ethers.utils.parseEther('3');
 const DEFAULT_DISCOUNT = ethers.utils.parseEther('1');
 const DEFAULT_REWARD = ethers.utils.parseEther('0.5');
 let adr: AdrSetupResult;
-let blockNumber: number;
+let blockTimestamp: number;
 let env: EnvSetupResult;
 
 const emptyUserQuery: LibMultipass.NameQueryStruct = {
@@ -32,7 +32,7 @@ describe(scriptName, () => {
     const setup = await setupTest();
     adr = setup.adr;
     env = setup.env;
-    blockNumber = await ethers.provider.getBlock('latest').then(block => block.timestamp);
+    blockTimestamp = await ethers.provider.getBlock('latest').then(block => block.timestamp);
   });
   it('Is Owned by contract owner', async () => {
     expect(await env.multipass.owner()).to.be.equal(adr.multipassOwner.wallet.address);
@@ -101,7 +101,7 @@ describe(scriptName, () => {
       name: ethers.utils.formatBytes32String(adr.player1.name),
       id: ethers.utils.formatBytes32String(adr.player1.id),
       domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-      deadline: ethers.BigNumber.from(blockNumber + 9999),
+      deadline: ethers.BigNumber.from(blockTimestamp + 9999),
       nonce: ethers.BigNumber.from(0),
     };
 
@@ -117,19 +117,13 @@ describe(scriptName, () => {
       wallet: adr.player1.wallet.address,
       nonce: 0,
       domainName: ethers.utils.formatBytes32String('invalidDomain'),
+      validUntil: registrarMessage.deadline,
     };
 
     await expect(
       env.multipass
         .connect(adr.multipassOwner.wallet)
-        .register(
-          applicantData,
-          ethers.utils.formatBytes32String('invalidDomain'),
-          registrarSignature,
-          registrarMessage.deadline,
-          emptyUserQuery,
-          ethers.constants.HashZero,
-        ),
+        .register(applicantData, registrarSignature, emptyUserQuery, ethers.constants.HashZero),
     ).to.be.revertedWithCustomError(env.multipass, 'invalidDomain');
   });
   it('Reverts if initializing domain name props are wrong', async () => {
@@ -279,18 +273,12 @@ describe(scriptName, () => {
         wallet: adr.player1.wallet.address,
         nonce: 0,
         domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
+        validUntil: blockTimestamp + 9999,
       };
       await expect(
         env.multipass
           .connect(adr.player1.wallet)
-          .register(
-            applicantData,
-            ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-            ethers.constants.HashZero,
-            ethers.constants.HashZero,
-            emptyUserQuery,
-            ethers.constants.HashZero,
-          ),
+          .register(applicantData, ethers.constants.HashZero, emptyUserQuery, ethers.constants.HashZero),
       ).to.be.revertedWithCustomError(env.multipass, 'isActive');
     });
     it('Emits and changes fee', async () => {
@@ -321,7 +309,7 @@ describe(scriptName, () => {
           name: ethers.utils.formatBytes32String(adr.player1.name),
           id: ethers.utils.formatBytes32String(adr.player1.id),
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          deadline: ethers.BigNumber.from(blockNumber + 9999),
+          deadline: ethers.BigNumber.from(blockTimestamp + 9999),
           nonce: ethers.BigNumber.from(0),
         };
 
@@ -333,20 +321,15 @@ describe(scriptName, () => {
           wallet: adr.player1.wallet.address,
           nonce: 0,
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
+          validUntil: registrarMessage.deadline,
         };
 
         await expect(
           env.multipass
             .connect(adr.player1.wallet)
-            .register(
-              applicantData,
-              registrarMessage.domainName,
-              registrarSignature,
-              registrarMessage.deadline,
-              emptyUserQuery,
-              ethers.constants.HashZero,
-              { value: DEFAULT_FEE },
-            ),
+            .register(applicantData, registrarSignature, emptyUserQuery, ethers.constants.HashZero, {
+              value: DEFAULT_FEE,
+            }),
         ).to.emit(env.multipass, 'Registered');
       });
 
@@ -355,7 +338,7 @@ describe(scriptName, () => {
           name: ethers.utils.formatBytes32String(adr.player1.name),
           id: ethers.utils.formatBytes32String(adr.player1.id),
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          deadline: ethers.BigNumber.from(blockNumber + 9999),
+          deadline: ethers.BigNumber.from(blockTimestamp + 9999),
           nonce: ethers.BigNumber.from(0),
         };
 
@@ -371,19 +354,13 @@ describe(scriptName, () => {
           wallet: adr.player1.wallet.address,
           nonce: 0,
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
+          validUntil: registrarMessage.deadline,
         };
 
         await expect(
           env.multipass
             .connect(adr.player1.wallet)
-            .register(
-              applicantData,
-              registrarMessage.domainName,
-              invalidRegistrarSignature,
-              registrarMessage.deadline,
-              emptyUserQuery,
-              ethers.constants.HashZero,
-            ),
+            .register(applicantData, invalidRegistrarSignature, emptyUserQuery, ethers.constants.HashZero),
         ).to.be.revertedWithCustomError(env.multipass, 'invalidSignature');
 
         registrarMessage.deadline = ethers.BigNumber.from(ethers.provider.blockNumber);
@@ -402,23 +379,22 @@ describe(scriptName, () => {
         // ).to.be.revertedWith('Multipass->register: Deadline is less than current block number');
       });
       it('Reverts if signature is outdated', async () => {
-        const registrantProps1 = await getUserRegisterProps(
-          adr.player2,
-          adr.registrar1,
-          NEW_DOMAIN_NAME1,
-          1,
-          env.multipass.address,
-        );
+        const registrantProps1 = await getUserRegisterProps({
+          account: adr.player2,
+          registrar: adr.registrar1,
+          domainName: NEW_DOMAIN_NAME1,
+          deadline: 1,
+          multipassAddress: env.multipass.address,
+        });
         await expect(
           env.multipass
             .connect(adr.player1.wallet)
             .register(
               registrantProps1.applicantData,
-              registrantProps1.registrarMessage.domainName,
               registrantProps1.validSignature,
-              registrantProps1.registrarMessage.deadline,
               emptyUserQuery,
               ethers.constants.HashZero,
+              { value: DEFAULT_FEE },
             ),
         ).to.be.revertedWithCustomError(env.multipass, 'signatureExpired');
       });
@@ -454,25 +430,19 @@ describe(scriptName, () => {
       describe('When user was registered', () => {
         let numDomains = 0;
         beforeEach(async () => {
-          const regProps = await getUserRegisterProps(
-            adr.player1,
-            adr.registrar1,
-            NEW_DOMAIN_NAME1,
-            blockNumber + 99999,
-            env.multipass.address,
-          );
+          const regProps = await getUserRegisterProps({
+            account: adr.player1,
+            registrar: adr.registrar1,
+            domainName: NEW_DOMAIN_NAME1,
+            deadline: blockTimestamp + 999999999,
+            multipassAddress: env.multipass.address,
+          });
 
           await env.multipass
             .connect(adr.player1.wallet)
-            .register(
-              regProps.applicantData,
-              regProps.registrarMessage.domainName,
-              regProps.validSignature,
-              regProps.registrarMessage.deadline,
-              emptyUserQuery,
-              ethers.constants.HashZero,
-              { value: DEFAULT_FEE },
-            );
+            .register(regProps.applicantData, regProps.validSignature, emptyUserQuery, ethers.constants.HashZero, {
+              value: DEFAULT_FEE,
+            });
         });
         it('Can find newly registered user ', async () => {
           //By full query
@@ -535,70 +505,84 @@ describe(scriptName, () => {
           resp = await env.multipass.connect(adr.player1.wallet).resolveRecord(query);
           expect(resp[0]).to.be.true;
         });
-        it('Reverts registration if user id already exist', async () => {
-          const regProps = await getUserRegisterProps(
-            adr.player1,
-            adr.registrar1,
-            NEW_DOMAIN_NAME1,
-            blockNumber + 99999,
-            env.multipass.address,
-          );
+        it("Can renew user's registration only with signature that has larger nonce", async () => {
+          const regProps = await getUserRegisterProps({
+            account: adr.player1,
+            registrar: adr.registrar1,
+            domainName: NEW_DOMAIN_NAME1,
+            deadline: blockTimestamp + 100,
+            multipassAddress: env.multipass.address,
+          });
+
+          let query: LibMultipass.NameQueryStruct = {
+            name: ethers.utils.formatBytes32String(adr.player1.name),
+            id: ethers.utils.formatBytes32String(adr.player1.id),
+            wallet: adr.player1.wallet.address,
+            domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
+            targetDomain: ethers.utils.formatBytes32String(''),
+          };
+
           await expect(
             env.multipass
               .connect(adr.player1.wallet)
-              .register(
-                regProps.applicantData,
-                regProps.registrarMessage.domainName,
-                regProps.validSignature,
-                regProps.registrarMessage.deadline,
-                emptyUserQuery,
-                ethers.constants.HashZero,
-              ),
+              .renewRecord(query, regProps.applicantData, regProps.validSignature),
+          ).to.be.revertedWithCustomError(env.multipass, 'invalidNonceIncrement');
+
+          const regProps2 = await getUserRegisterProps({
+            account: adr.player1,
+            registrar: adr.registrar1,
+            domainName: NEW_DOMAIN_NAME1,
+            deadline: blockTimestamp + 100,
+            multipassAddress: env.multipass.address,
+            nonce: 2,
+          });
+          await expect(
+            env.multipass
+              .connect(adr.player1.wallet)
+              .renewRecord(query, regProps2.applicantData, regProps2.validSignature),
+          ).to.be.emit(env.multipass, 'Renewed');
+        });
+        it('Reverts registration if user id already exist', async () => {
+          const regProps = await getUserRegisterProps({
+            account: adr.player1,
+            registrar: adr.registrar1,
+            domainName: NEW_DOMAIN_NAME1,
+            deadline: blockTimestamp + 99999,
+            multipassAddress: env.multipass.address,
+          });
+          await expect(
+            env.multipass
+              .connect(adr.player1.wallet)
+              .register(regProps.applicantData, regProps.validSignature, emptyUserQuery, ethers.constants.HashZero),
           ).to.be.revertedWithCustomError(env.multipass, 'recordExists');
           regProps.applicantData.id = ethers.utils.formatBytes32String(adr.player2.id);
           await expect(
             env.multipass
               .connect(adr.player1.wallet)
-              .register(
-                regProps.applicantData,
-                regProps.registrarMessage.domainName,
-                regProps.validSignature,
-                regProps.registrarMessage.deadline,
-                emptyUserQuery,
-                ethers.constants.HashZero,
-              ),
+              .register(regProps.applicantData, regProps.validSignature, emptyUserQuery, ethers.constants.HashZero),
           ).to.be.revertedWithCustomError(env.multipass, 'recordExists');
           regProps.applicantData.name = ethers.utils.formatBytes32String(adr.player2.name);
           await expect(
             env.multipass
               .connect(adr.player1.wallet)
-              .register(
-                regProps.applicantData,
-                regProps.registrarMessage.domainName,
-                regProps.validSignature,
-                regProps.registrarMessage.deadline,
-                emptyUserQuery,
-                ethers.constants.HashZero,
-              ),
+              .register(regProps.applicantData, regProps.validSignature, emptyUserQuery, ethers.constants.HashZero),
           ).to.be.revertedWithCustomError(env.multipass, 'recordExists');
         });
         it('Emits when register with valid referral code', async () => {
-          const registrantProps = await getUserRegisterProps(
-            adr.player2,
-            adr.registrar1,
-            NEW_DOMAIN_NAME1,
-            blockNumber + 99999,
-            env.multipass.address,
-            adr.player1,
-          );
+          const registrantProps = await getUserRegisterProps({
+            account: adr.player2,
+            registrar: adr.registrar1,
+            domainName: NEW_DOMAIN_NAME1,
+            deadline: blockTimestamp + 99999,
+            multipassAddress: env.multipass.address,
+            referrer: adr.player1,
+          });
           await expect(
             env.multipass
               .connect(adr.player1.wallet)
               .register(
                 registrantProps.applicantData,
-                registrantProps.registrarMessage.domainName,
                 registrantProps.validSignature,
-                registrantProps.registrarMessage.deadline,
                 registrantProps.referrerData,
                 registrantProps.referrerSignature,
                 { value: DEFAULT_FEE },
@@ -610,7 +594,7 @@ describe(scriptName, () => {
             name: ethers.utils.formatBytes32String(adr.player1.name + `.` + NEW_DOMAIN_NAME1 + `new`),
             id: ethers.utils.formatBytes32String(adr.player1.id + `.` + NEW_DOMAIN_NAME1),
             domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-            deadline: ethers.BigNumber.from(blockNumber + 99999),
+            deadline: ethers.BigNumber.from(blockTimestamp + 99999),
             nonce: ethers.BigNumber.from(1),
           };
 
@@ -683,49 +667,45 @@ describe(scriptName, () => {
               .activateDomain(ethers.utils.formatBytes32String(NEW_DOMAIN_NAME2));
           });
           it('Reverts on referring yourself from a different domain', async () => {
-            const registrantProps1 = await getUserRegisterProps(
-              adr.player2,
-              adr.registrar1,
-              NEW_DOMAIN_NAME1,
-              blockNumber + 99999,
-              env.multipass.address,
-            );
+            const registrantProps1 = await getUserRegisterProps({
+              account: adr.player2,
+              registrar: adr.registrar1,
+              domainName: NEW_DOMAIN_NAME1,
+              deadline: blockTimestamp + 99999,
+              multipassAddress: env.multipass.address,
+            });
             await env.multipass
               .connect(adr.player2.wallet)
               .register(
                 registrantProps1.applicantData,
-                registrantProps1.registrarMessage.domainName,
                 registrantProps1.validSignature,
-                registrantProps1.registrarMessage.deadline,
                 registrantProps1.referrerData,
                 registrantProps1.referrerSignature,
                 { value: DEFAULT_FEE },
               );
-            const registrantProps2 = await getUserRegisterProps(
-              adr.player2,
-              adr.registrar1,
-              NEW_DOMAIN_NAME2,
-              blockNumber + 99999,
-              env.multipass.address,
-              adr.player2,
-              NEW_DOMAIN_NAME1,
-            );
-            const registrantProps21 = await getUserRegisterProps(
-              adr.player2,
-              adr.registrar1,
-              NEW_DOMAIN_NAME1,
-              blockNumber + 99999,
-              env.multipass.address,
-              adr.player2,
-            );
+            const registrantProps2 = await getUserRegisterProps({
+              account: adr.player2,
+              registrar: adr.registrar1,
+              domainName: NEW_DOMAIN_NAME2,
+              deadline: blockTimestamp + 99999,
+              multipassAddress: env.multipass.address,
+              referrer: adr.player2,
+              referrerDomain: NEW_DOMAIN_NAME1,
+            });
+            const registrantProps21 = await getUserRegisterProps({
+              account: adr.player2,
+              registrar: adr.registrar1,
+              domainName: NEW_DOMAIN_NAME1,
+              deadline: blockTimestamp + 99999,
+              multipassAddress: env.multipass.address,
+              referrer: adr.player2,
+            });
             await expect(
               env.multipass
                 .connect(adr.player2.wallet)
                 .register(
                   registrantProps2.applicantData,
-                  registrantProps2.registrarMessage.domainName,
                   registrantProps2.validSignature,
-                  registrantProps2.registrarMessage.deadline,
                   registrantProps21.referrerData,
                   registrantProps2.referrerSignature,
                   { value: DEFAULT_FEE },
@@ -734,21 +714,19 @@ describe(scriptName, () => {
           });
 
           it('Can register same user on both domains and do cross domain lookup', async () => {
-            const registrantProps1 = await getUserRegisterProps(
-              adr.player1,
-              adr.registrar1,
-              NEW_DOMAIN_NAME2,
-              blockNumber + 99999,
-              env.multipass.address,
-            );
+            const registrantProps1 = await getUserRegisterProps({
+              account: adr.player1,
+              registrar: adr.registrar1,
+              domainName: NEW_DOMAIN_NAME2,
+              deadline: blockTimestamp + 99999,
+              multipassAddress: env.multipass.address,
+            });
             await expect(
               env.multipass
                 .connect(adr.player1.wallet)
                 .register(
                   registrantProps1.applicantData,
-                  registrantProps1.registrarMessage.domainName,
                   registrantProps1.validSignature,
-                  registrantProps1.registrarMessage.deadline,
                   registrantProps1.referrerData,
                   registrantProps1.referrerSignature,
                   { value: DEFAULT_FEE },
@@ -770,21 +748,19 @@ describe(scriptName, () => {
       });
 
       it('Should allow registering with paying ether', async () => {
-        const registrantProps1 = await getUserRegisterProps(
-          adr.player1,
-          adr.registrar1,
-          NEW_DOMAIN_NAME1,
-          blockNumber + 99999,
-          env.multipass.address,
-        );
+        const registrantProps1 = await getUserRegisterProps({
+          account: adr.player1,
+          registrar: adr.registrar1,
+          domainName: NEW_DOMAIN_NAME1,
+          deadline: blockTimestamp + 99999,
+          multipassAddress: env.multipass.address,
+        });
         await expect(
           env.multipass
             .connect(adr.player1.wallet)
             .register(
               registrantProps1.applicantData,
-              registrantProps1.registrarMessage.domainName,
               registrantProps1.validSignature,
-              registrantProps1.registrarMessage.deadline,
               registrantProps1.referrerData,
               registrantProps1.referrerSignature,
               { value: DEFAULT_FEE },
@@ -792,21 +768,19 @@ describe(scriptName, () => {
         ).to.emit(env.multipass, 'Registered');
       });
       it('Owner receives payment', async () => {
-        const registrantProps1 = await getUserRegisterProps(
-          adr.player1,
-          adr.registrar1,
-          NEW_DOMAIN_NAME1,
-          blockNumber + 99999,
-          env.multipass.address,
-        );
+        const registrantProps1 = await getUserRegisterProps({
+          account: adr.player1,
+          registrar: adr.registrar1,
+          domainName: NEW_DOMAIN_NAME1,
+          deadline: blockTimestamp + 99999,
+          multipassAddress: env.multipass.address,
+        });
         const balanceBefore = await ethers.provider.getBalance(adr.multipassOwner.wallet.address);
         await env.multipass
           .connect(adr.player1.wallet)
           .register(
             registrantProps1.applicantData,
-            registrantProps1.registrarMessage.domainName,
             registrantProps1.validSignature,
-            registrantProps1.registrarMessage.deadline,
             registrantProps1.referrerData,
             registrantProps1.referrerSignature,
             { value: DEFAULT_FEE },
@@ -815,21 +789,19 @@ describe(scriptName, () => {
         expect(balanceAfter).to.be.equal(balanceBefore.add(DEFAULT_FEE));
       });
       it('Should revert register if not enough ether', async () => {
-        const registrantProps1 = await getUserRegisterProps(
-          adr.player1,
-          adr.registrar1,
-          NEW_DOMAIN_NAME1,
-          blockNumber + 99999,
-          env.multipass.address,
-        );
+        const registrantProps1 = await getUserRegisterProps({
+          account: adr.player1,
+          registrar: adr.registrar1,
+          domainName: NEW_DOMAIN_NAME1,
+          deadline: blockTimestamp + 99999,
+          multipassAddress: env.multipass.address,
+        });
         await expect(
           env.multipass
             .connect(adr.player1.wallet)
             .register(
               registrantProps1.applicantData,
-              registrantProps1.registrarMessage.domainName,
               registrantProps1.validSignature,
-              registrantProps1.registrarMessage.deadline,
               registrantProps1.referrerData,
               registrantProps1.referrerSignature,
               { value: NOT_ENOUGH_FEE },

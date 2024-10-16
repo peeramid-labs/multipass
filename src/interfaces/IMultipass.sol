@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.28;
 
-import "../libraries/LibMultipass.sol";
+import {LibMultipass} from "../libraries/LibMultipass.sol";
 
 interface IMultipass {
     enum InvalidQueryReasons {
@@ -142,10 +142,8 @@ interface IMultipass {
      *  Emits an {registered} event.
      */
     function register(
-        LibMultipass.Record memory newRecord,
-        bytes32 domainName,
+       LibMultipass.Record memory newRecord,
         bytes memory registrarSignature,
-        uint256 signatureDeadline,
         LibMultipass.NameQuery memory referrer,
         bytes memory referralCode
     ) external payable;
@@ -320,9 +318,31 @@ interface IMultipass {
     );
 
     /**
+     * @dev Emitted when a user record is renewed.
+     * @param wallet The address of the wallet.
+     * @param domainName The domain name.
+     * @param id The ID of the record.
+     * @param newRecord The new record.
+     */
+    event Renewed(address indexed wallet, bytes32 indexed domainName, bytes32 indexed id, LibMultipass.Record newRecord);
+
+
+    /**
      * @dev Retrieves the domain state by its ID.
      * @param id The ID of the domain.
      * @return The domain state as a `LibMultipass.Domain` struct.
      */
     function getDomainStateById(uint256 id) external view returns (LibMultipass.Domain memory);
+
+    /**
+     * @notice renews record for given query
+     * @param query name query
+     * @param record new record
+     * @param registrarSignature registrar signature
+     */
+    function renewRecord(
+         LibMultipass.NameQuery memory query,
+        LibMultipass.Record memory record,
+        bytes memory registrarSignature
+    ) external payable;
 }

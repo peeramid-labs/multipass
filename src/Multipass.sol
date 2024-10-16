@@ -34,48 +34,33 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         return SignatureChecker.isValidSignatureNow(account, typedHash, signature);
     }
 
-    function _validateRegistration(
-        LibMultipass.Record memory newRecord,
-        bytes32 domainName,
-        bytes memory registrarSignature,
-        uint256 signatureDeadline
-    ) private view {
-        LibMultipass.NameQuery memory query = LibMultipass.queryFromRecord(newRecord, domainName);
+    function _validateRecord(LibMultipass.Record memory newRecord, bytes memory registrarSignature) private view {
+        LibMultipass.NameQuery memory query = LibMultipass.queryFromRecord(newRecord);
         //Check name query is legit
         require(LibMultipass._checkNotEmpty(query.id), invalidQuery(InvalidQueryReasons.EMPTY_ID));
         require(LibMultipass._checkNotEmpty(query.domainName), invalidQuery(InvalidQueryReasons.EMPTY_DOMAIN));
         require(query.wallet != address(0), invalidQuery(InvalidQueryReasons.EMPTY_ADDRESS));
-
-        //Check query does not resolves (name already exists)
-        {
-            (bool success, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
-            require(!success, recordExists(r));
-        }
         //Check LibMultipass.Domain is legit
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(query.domainName);
         require(_domain.properties.isActive, isActive(_domain.properties.name, false));
 
         //check signatures and time
-        require(signatureDeadline > block.timestamp, signatureExpired(signatureDeadline));
+        require(newRecord.validUntil > block.timestamp, signatureExpired(newRecord.validUntil));
 
         {
             bytes memory registrarMessage = abi.encode(
                 LibMultipass._TYPEHASH,
-                query.name,
-                query.id,
-                query.domainName,
-                signatureDeadline,
-                0
+                newRecord.name,
+                newRecord.id,
+                newRecord.domainName,
+                newRecord.validUntil,
+                newRecord.nonce
             );
 
             require(
                 _isValidSignature(registrarMessage, registrarSignature, _domain.properties.registrar),
                 invalidSignature()
             );
-        }
-        {
-            (bool status, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
-            require(!status, nameExists(r.name));
         }
     }
 
@@ -155,6 +140,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         _domain.idToAddress[r.id] = address(0);
         _domain.idToName[r.id] = bytes32(0);
         _domain.nameToId[r.name] = bytes32(0);
+        _domain.validUntil[r.wallet] = 0;
         _domain.nonce[r.id] += 1;
         _domain.properties.registerSize--;
 
@@ -190,15 +176,19 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     /// @inheritdoc IMultipass
     function register(
         LibMultipass.Record memory newRecord,
-        bytes32 domainName,
         bytes memory registrarSignature,
-        uint256 signatureDeadline,
         LibMultipass.NameQuery memory referrer,
         bytes memory referralCode
-    ) public payable override nonReentrant {
-        _enforseDomainNameIsValid(domainName);
-        _validateRegistration(newRecord, domainName, registrarSignature, signatureDeadline);
-        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
+    ) external payable override nonReentrant {
+        _enforseDomainNameIsValid(newRecord.domainName);
+        //Check query does not resolves (name already exists)
+        {
+            LibMultipass.NameQuery memory query = LibMultipass.queryFromRecord(newRecord);
+            (bool success, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
+            require(!success, recordExists(r));
+        }
+        _validateRecord(newRecord, registrarSignature);
+        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(newRecord.domainName);
         (bool hasValidReferrer, LibMultipass.Record memory referrerRecord) = LibMultipass.resolveRecord(referrer);
 
         uint256 referrersShare = hasValidReferrer ? _domain.properties.referrerReward : 0;
@@ -218,7 +208,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
                 (bool success, ) = payable(referrerRecord.wallet).call{value: referrersShare}("");
                 require(success, paymendFailed());
             }
-            emit Referred(referrerRecord, newRecord, domainName);
+            emit Referred(referrerRecord, newRecord, newRecord.domainName);
         }
 
         LibMultipass._registerNew(newRecord, _domain);
@@ -229,6 +219,26 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         (bool userExists, LibMultipass.Record memory record) = LibMultipass.resolveRecord(query);
         require(userExists, userNotFound(query));
         return LibMultipass._getModifyPrice(record);
+    }
+
+    function renewRecord(
+        LibMultipass.NameQuery memory query,
+        LibMultipass.Record memory record,
+        bytes memory registrarSignature
+    ) external payable override {
+        _enforseDomainNameIsValid(record.domainName);
+        (bool userExists, LibMultipass.Record memory userRecord) = LibMultipass.resolveRecord(query);
+        require(
+            userRecord.nonce < record.nonce,
+            invalidNonceIncrement(userRecord.nonce, record.nonce)
+        );
+        require(userRecord.domainName == record.domainName, invalidDomain(userRecord.domainName));
+        _validateRecord(record, registrarSignature);
+        require(userExists, userNotFound(query));
+        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(record.domainName);
+        require(_domain.properties.isActive, domainNotActive(record.domainName));
+        require(record.validUntil >= block.timestamp, signatureExpired(record.validUntil));
+        emit Renewed(record.wallet, record.domainName, record.id, record);
     }
 
     /// @inheritdoc IMultipass

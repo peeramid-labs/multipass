@@ -58,6 +58,7 @@ library LibMultipass {
         bytes32 id;
         uint96 nonce;
         bytes32 domainName;
+        uint256 validUntil;
     }
 
     bytes32 constant MULTIPASS_STORAGE_POSITION = keccak256("multipass.diamond.storage.position");
@@ -80,7 +81,7 @@ library LibMultipass {
         mapping(address => bytes32) addressToId; //N*32 bytes
         mapping(bytes32 => bytes32) nameToId; //N*32 bytes
         mapping(bytes32 => bytes32) idToName; //N*32 bytes
-        //Total: 128+N*160 Bytes
+        mapping(address => uint256) validUntil; //N*32 bytes
     }
 
     /**
@@ -206,6 +207,7 @@ library LibMultipass {
         domain.idToName[record.id] = record.name;
         domain.nameToId[record.name] = record.id;
         domain.nonce[record.id] += 1;
+        domain.validUntil[record.wallet] = record.validUntil;
     }
 
     function _resolveFromAddress(
@@ -228,13 +230,12 @@ library LibMultipass {
     /**
      * @dev Resolves the record of a user.
      * @param _record The record to resolve the query for.
-     * @param _domainName The domain name to resolve the query for.
      * @return query result.
      */
-    function queryFromRecord(Record memory _record, bytes32 _domainName) internal pure returns (NameQuery memory) {
+    function queryFromRecord(Record memory _record) internal pure returns (NameQuery memory) {
         NameQuery memory _query;
         _query.id = _record.id;
-        _query.domainName = _domainName;
+        _query.domainName = _record.domainName;
         _query.name = _record.name;
         _query.wallet = _record.wallet;
         return _query;
