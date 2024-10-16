@@ -12,6 +12,7 @@ const NEW_DOMAIN_NAME1 = 'newDomainName1';
 const NEW_DOMAIN_NAME2 = 'newDomainName2';
 const NOT_ENOUGH_FEE = ethers.utils.parseEther('0.17');
 const DEFAULT_FEE = ethers.utils.parseEther('2');
+const DEFAULT_RENEWAL_FEE = ethers.utils.parseEther('1');
 const FEE_AFTER_CHANGE = ethers.utils.parseEther('3');
 const DEFAULT_DISCOUNT = ethers.utils.parseEther('1');
 const DEFAULT_REWARD = ethers.utils.parseEther('0.5');
@@ -61,6 +62,7 @@ describe(scriptName, () => {
         .initializeDomain(
           adr.registrar1.wallet.address,
           ethers.utils.parseEther('3'),
+          ethers.utils.parseEther('1'),
           ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
           ethers.utils.parseEther('1'),
           ethers.utils.parseEther('1'),
@@ -133,6 +135,7 @@ describe(scriptName, () => {
         .initializeDomain(
           adr.registrar1.wallet.address,
           ethers.utils.parseEther('3'),
+          ethers.utils.parseEther('1'),
           ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
           ethers.utils.parseEther('1.0001'),
           ethers.utils.parseEther('2'),
@@ -144,6 +147,7 @@ describe(scriptName, () => {
         .initializeDomain(
           ethers.constants.AddressZero,
           ethers.utils.parseEther('3'),
+          ethers.utils.parseEther('1'),
           ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
           ethers.utils.parseEther('1.0001'),
           ethers.utils.parseEther('2'),
@@ -155,6 +159,7 @@ describe(scriptName, () => {
         .initializeDomain(
           adr.registrar1.wallet.address,
           ethers.utils.parseEther('3'),
+          ethers.utils.parseEther('1'),
           ethers.utils.formatBytes32String(''),
           ethers.utils.parseEther('1'),
           ethers.utils.parseEther('2'),
@@ -167,6 +172,7 @@ describe(scriptName, () => {
         .initializeDomain(
           adr.registrar1.wallet.address,
           ethers.constants.MaxUint256,
+          ethers.utils.parseEther('1'),
           ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
           ethers.constants.MaxUint256,
           ethers.utils.parseEther('1'),
@@ -202,6 +208,7 @@ describe(scriptName, () => {
         .initializeDomain(
           adr.maliciousActor1.wallet.address,
           DEFAULT_FEE,
+          DEFAULT_RENEWAL_FEE,
           ethers.utils.formatBytes32String(''),
           DEFAULT_REWARD,
           DEFAULT_DISCOUNT,
@@ -216,11 +223,25 @@ describe(scriptName, () => {
         .initializeDomain(
           adr.registrar1.wallet.address,
           DEFAULT_FEE,
+          DEFAULT_RENEWAL_FEE,
           ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
           DEFAULT_REWARD,
           DEFAULT_DISCOUNT,
         );
       numDomains = 1;
+    });
+    it('allows owner to change renew fee', async () => {
+      await expect(
+        env.multipass
+          .connect(adr.multipassOwner.wallet)
+          .changeRenewalFee(ethers.utils.parseEther('2'), ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1)),
+      ).to.emit(env.multipass, 'RenewalFeeChanged');
+
+      await expect(
+        env.multipass
+          .connect(adr.player1.wallet)
+          .changeRenewalFee(ethers.utils.parseEther('2'), ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1)),
+      ).to.be.revertedWithCustomError(env.multipass, 'OwnableUnauthorizedAccount');
     });
     it('allows owner to change referral program', async () => {
       await expect(
@@ -236,6 +257,7 @@ describe(scriptName, () => {
           .initializeDomain(
             adr.registrar1.wallet.address,
             DEFAULT_FEE,
+            DEFAULT_RENEWAL_FEE,
             ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
             DEFAULT_REWARD,
             DEFAULT_DISCOUNT,
@@ -540,6 +562,12 @@ describe(scriptName, () => {
             env.multipass
               .connect(adr.player1.wallet)
               .renewRecord(query, regProps2.applicantData, regProps2.validSignature),
+          ).to.be.revertedWithCustomError(env.multipass, 'paymentTooLow');
+
+          await expect(
+            env.multipass
+              .connect(adr.player1.wallet)
+              .renewRecord(query, regProps2.applicantData, regProps2.validSignature, { value: DEFAULT_RENEWAL_FEE }),
           ).to.be.emit(env.multipass, 'Renewed');
         });
         it('Reverts registration if user id already exist', async () => {
@@ -589,51 +617,6 @@ describe(scriptName, () => {
               ),
           ).to.emit(env.multipass, 'Referred');
         });
-        it('Can modify username with a valid arguments', async () => {
-          const registrarMessage = {
-            name: ethers.utils.formatBytes32String(adr.player1.name + `.` + NEW_DOMAIN_NAME1 + `new`),
-            id: ethers.utils.formatBytes32String(adr.player1.id + `.` + NEW_DOMAIN_NAME1),
-            domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-            deadline: ethers.BigNumber.from(blockTimestamp + 99999),
-            nonce: ethers.BigNumber.from(1),
-          };
-
-          const modifyQuery: LibMultipass.NameQueryStruct = {
-            name: ethers.utils.formatBytes32String(adr.player1.name + `.` + NEW_DOMAIN_NAME1),
-            id: registrarMessage.id,
-            domainName: registrarMessage.domainName,
-            wallet: adr.player1.wallet.address,
-            targetDomain: ethers.utils.formatBytes32String(''),
-          };
-
-          const validSignature = await signRegistrarMessage(registrarMessage, env.multipass.address, adr.registrar1);
-
-          await expect(
-            env.multipass
-              .connect(adr.player1.wallet)
-              .modifyUserName(
-                registrarMessage.domainName,
-                modifyQuery,
-                registrarMessage.name,
-                validSignature,
-                registrarMessage.deadline,
-              ),
-          ).to.be.revertedWithCustomError(env.multipass, 'paymentTooLow');
-
-          const valueToPay = env.multipass.getModifyPrice(modifyQuery);
-          await expect(
-            env.multipass
-              .connect(adr.player1.wallet)
-              .modifyUserName(
-                registrarMessage.domainName,
-                modifyQuery,
-                registrarMessage.name,
-                validSignature,
-                registrarMessage.deadline,
-                { value: valueToPay },
-              ),
-          ).to.be.emit(env.multipass, 'UserRecordModified');
-        });
         it('Emits and deletes user', async () => {
           let query: LibMultipass.NameQueryStruct = {
             name: ethers.utils.formatBytes32String(adr.player1.name + `.` + NEW_DOMAIN_NAME1),
@@ -658,6 +641,7 @@ describe(scriptName, () => {
               .initializeDomain(
                 adr.registrar1.wallet.address,
                 DEFAULT_FEE,
+                DEFAULT_RENEWAL_FEE,
                 ethers.utils.formatBytes32String(NEW_DOMAIN_NAME2),
                 DEFAULT_REWARD,
                 DEFAULT_DISCOUNT,

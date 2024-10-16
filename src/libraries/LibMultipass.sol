@@ -50,6 +50,7 @@ library LibMultipass {
         address registrar; //20 bytes
         uint24 ttl; //3 bytes (not being used for now)
         uint256 registerSize; //32bytes
+        uint256 renewalFee; //32bytes
     }
 
     /**
@@ -144,6 +145,7 @@ library LibMultipass {
     function _initializeDomain(
         address registrar,
         uint256 fee,
+        uint256 renewalFee,
         bytes32 domainName,
         uint256 referrerReward,
         uint256 referralDiscount
@@ -157,15 +159,9 @@ library LibMultipass {
         _domain.properties.name = domainName;
         _domain.properties.referrerReward = referrerReward;
         _domain.properties.referralDiscount = referralDiscount;
+        _domain.properties.renewalFee = renewalFee;
         ms.numDomains++;
         ms.domainNameToIndex[domainName] = domainIndex;
-    }
-
-    function _getModifyPrice(LibMultipass.Record memory userRecord) internal view returns (uint256) {
-        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(userRecord.domainName);
-        uint256 feeCoefficient = _domain.properties.fee / 10;
-        uint256 nonceCoefficient = userRecord.nonce * userRecord.nonce;
-        return ((feeCoefficient * nonceCoefficient) + _domain.properties.fee);
     }
 
     function _resolveRecord(NameQuery memory query) private view returns (bool, Record memory) {

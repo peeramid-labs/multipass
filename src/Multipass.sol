@@ -79,6 +79,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     function initializeDomain(
         address registrar,
         uint256 fee,
+        uint256 renewalFee,
         bytes32 domainName,
         uint256 referrerReward,
         uint256 referralDiscount
@@ -90,8 +91,8 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         require(status, mathOverflow(referrerReward, referralDiscount));
         require(result <= fee, referralRewardsTooHigh(referrerReward, referralDiscount, fee));
 
-        LibMultipass._initializeDomain(registrar, fee, domainName, referrerReward, referralDiscount);
-        emit InitializedDomain(registrar, fee, domainName, referrerReward, referralDiscount);
+        LibMultipass._initializeDomain(registrar, fee, renewalFee, domainName, referrerReward, referralDiscount);
+        emit InitializedDomain(registrar, fee, domainName, renewalFee, referrerReward, referralDiscount);
     }
 
     function _enforseDomainNameIsValid(bytes32 domainName) private view {
@@ -225,19 +226,13 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         LibMultipass._registerNew(newRecord, _domain);
         emit Registered(_domain.properties.name, newRecord);
     }
-    /// @inheritdoc IMultipass
-    function getModifyPrice(LibMultipass.NameQuery memory query) external view override returns (uint256) {
-        (bool userExists, LibMultipass.Record memory record) = LibMultipass.resolveRecord(query);
-        require(userExists, userNotFound(query));
-        return LibMultipass._getModifyPrice(record);
-    }
 
     /// @inheritdoc IMultipass
     function renewRecord(
         LibMultipass.NameQuery memory query,
         LibMultipass.Record memory record,
         bytes memory registrarSignature
-    ) external payable override {
+    ) external payable override nonReentrant{
         _enforseDomainNameIsValid(record.domainName);
         (bool userExists, LibMultipass.Record memory userRecord) = LibMultipass.resolveRecord(query);
         require(userRecord.nonce < record.nonce, invalidNonceIncrement(userRecord.nonce, record.nonce));
@@ -248,51 +243,11 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         require(_domain.properties.isActive, domainNotActive(record.domainName));
         require(record.validUntil >= block.timestamp, signatureExpired(record.validUntil));
         emit Renewed(record.wallet, record.domainName, record.id, record);
-    }
-
-    /// @inheritdoc IMultipass
-    function modifyUserName(
-        bytes32 domainName,
-        LibMultipass.NameQuery memory query,
-        bytes32 newName,
-        bytes memory registrarSignature,
-        uint256 signatureDeadline
-    ) external payable override {
-        _enforseDomainNameIsValid(domainName);
-        query.targetDomain = domainName;
-        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
-        require(_domain.properties.isActive, domainNotActive(domainName));
-        require(newName != bytes32(0), invalidnameChange(domainName, newName));
-        require(signatureDeadline >= block.timestamp, signatureExpired(signatureDeadline));
-
-        (bool userExists, LibMultipass.Record memory userRecord) = LibMultipass.resolveRecord(query);
-        LibMultipass.Record memory newRecord = userRecord;
-        bytes32 oldName = newRecord.name;
-        newRecord.name = newName;
-        require(userExists, userNotFound(query));
-        bytes memory registrarMessage = abi.encode(
-            LibMultipass._TYPEHASH,
-            newRecord.name,
-            newRecord.id,
-            newRecord.domainName,
-            signatureDeadline,
-            userRecord.nonce
-        );
-        require(
-            _isValidSignature(registrarMessage, registrarSignature, _domain.properties.registrar),
-            invalidSignature()
-        );
-
-        uint256 _fee = LibMultipass._getModifyPrice(newRecord);
-
-        require(msg.value >= _fee, paymentTooLow(_fee, msg.value));
-        require(_domain.nonce[userRecord.id] == userRecord.nonce, invalidNonce(userRecord.nonce));
-        require(_domain.nameToId[newName] == bytes32(0), nameExists(newName));
-
-        LibMultipass._setRecord(_domain, newRecord);
-        _domain.nameToId[_domain.idToName[newRecord.id]] = bytes32(0);
-
-        emit UserRecordModified(newRecord, oldName, domainName);
+        if(_domain.properties.renewalFee > 0){
+            require(msg.value >= _domain.properties.renewalFee, paymentTooLow(_domain.properties.renewalFee, msg.value));
+            (bool success, ) = payable(owner()).call{value: _domain.properties.renewalFee}("");
+            require(success, paymendFailed());
+        }
     }
 
     /// @inheritdoc IMultipass
@@ -319,5 +274,13 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == type(IMultipass).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /// @inheritdoc IMultipass
+    function changeRenewalFee(uint256 fee, bytes32 domainName) external onlyOwner {
+        _enforseDomainNameIsValid(domainName);
+        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
+        _domain.properties.renewalFee = fee;
+        emit RenewalFeeChanged(domainName, fee);
     }
 }
