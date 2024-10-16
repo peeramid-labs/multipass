@@ -232,6 +232,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         return LibMultipass._getModifyPrice(record);
     }
 
+    /// @inheritdoc IMultipass
     function renewRecord(
         LibMultipass.NameQuery memory query,
         LibMultipass.Record memory record,
