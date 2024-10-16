@@ -2,6 +2,13 @@
 pragma solidity =0.8.28;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+/**
+ * @title LibMultipass
+ * @notice Library for handling multipass functionality.
+ *
+ * This library provides a set of functions to manage and utilize multipass features.
+ * It is designed to be used as a part of the multipass system within the project.
+ */
 library LibMultipass {
     /**
      * @dev resolves user from any given argument
@@ -98,7 +105,7 @@ library LibMultipass {
     /**
      * @dev Returns the storage struct for the Multipass contract.
      */
-    function MultipassStorage() internal pure returns (MultipassStorageStruct storage es) {
+    function MultipassStorage() private pure returns (MultipassStorageStruct storage es) {
         bytes32 position = MULTIPASS_STORAGE_POSITION;
         assembly {
             es.slot := position
@@ -140,7 +147,7 @@ library LibMultipass {
         uint256 referrerReward,
         uint256 referralDiscount
     ) internal {
-        LibMultipass.MultipassStorageStruct storage ms = LibMultipass.MultipassStorage();
+        LibMultipass.MultipassStorageStruct storage ms = MultipassStorage();
 
         uint256 domainIndex = ms.numDomains + 1;
         LibMultipass.DomainStorage storage _domain = ms.domains[domainIndex];
@@ -221,6 +228,7 @@ library LibMultipass {
         resolved.nonce = _domain.nonce[resolved.id];
         resolved.wallet = _address;
         resolved.domainName = _domain.properties.name;
+        resolved.validUntil = _domain.validUntil[_address];
 
         if (resolved.id == bytes32(0)) {
             return (false, resolved);
@@ -247,7 +255,7 @@ library LibMultipass {
     }
 
     function _getContractState() internal view returns (uint256) {
-        LibMultipass.MultipassStorageStruct storage ms = LibMultipass.MultipassStorage();
+        LibMultipass.MultipassStorageStruct storage ms = MultipassStorage();
         return ms.numDomains;
     }
 

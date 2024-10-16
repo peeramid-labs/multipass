@@ -3,6 +3,12 @@ pragma solidity =0.8.28;
 
 import {LibMultipass} from "../libraries/LibMultipass.sol";
 
+/**
+ * @title IMultipass
+ * @notice Interface for the Multipass contract. Multipass contract acts as cross-domain registry, allowing owner to specify registrars and domains that can be used to register names.
+ * It also allows for referral program, where referrers can earn rewards for referring new registrations.
+ *
+ */
 interface IMultipass {
     enum InvalidQueryReasons {
         EMPTY_ID,
@@ -27,6 +33,7 @@ interface IMultipass {
     error userNotFound(LibMultipass.NameQuery query);
     error invalidnameChange(bytes32 domainName, bytes32 newName);
     error invalidNonce(uint256 nonce);
+    error invalidNonceIncrement(uint256 old, uint256 newer);
 
     /**
      * @dev Retrieves the resolved record for a given name query.
@@ -85,7 +92,6 @@ interface IMultipass {
      *
      *  Emits an {DomainDeactivated} event.
      */
-
     function deactivateDomain(bytes32 domainName) external;
 
     /**
@@ -245,12 +251,6 @@ interface IMultipass {
      */
     event RegistrarChanged(bytes32 indexed domainName, address indexed registrar);
 
-    /**
-     * @dev Emitted when a domain name change is requested.
-     * @param domainIndex The index of the domain.
-     * @param newDomainName The new name for the domain.
-     */
-    event DomainNameChangeRequested(uint256 indexed domainIndex, bytes32 indexed newDomainName);
 
     /**
      * @dev Emitted when a name is deleted.
@@ -261,12 +261,6 @@ interface IMultipass {
      */
     event nameDeleted(bytes32 indexed domainName, address indexed wallet, bytes32 indexed id, bytes32 name);
 
-    /**
-     * @dev Emitted when a domain's TTL (Time-to-Live) change is requested.
-     * @param domainName The domain name.
-     * @param amount The new TTL amount.
-     */
-    event DomainTTLChangeRequested(bytes32 indexed domainName, uint256 amount);
 
     /**
      * @dev Emitted when the referral program for a domain is changed.
@@ -276,19 +270,6 @@ interface IMultipass {
      */
     event ReferralProgramChanged(bytes32 indexed domainName, uint256 reward, uint256 discount);
 
-    /**
-     * @dev Emitted when domain changes are live.
-     * @param domainName The domain name.
-     * @param changes The array of changes.
-     */
-    event DomainChangesAreLive(bytes32 indexed domainName, bytes32[] indexed changes);
-
-    /**
-     * @dev Emitted when a changes queue is canceled.
-     * @param domainName The domain name.
-     * @param changes The array of changes.
-     */
-    event changesQeueCanceled(bytes32 indexed domainName, bytes32[] indexed changes);
 
     /**
      * @dev Emitted when a domain is registered.

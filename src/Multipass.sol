@@ -11,6 +11,7 @@ import "./libraries/LibMultipass.sol";
 /**
  * @title Multipass
  * @dev This contract implements various functions related to the management of domain names and registration records.
+ * @custom:security-contact sirt@peeramid.xyz
  */
 contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     using ECDSA for bytes32;
@@ -20,6 +21,16 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     using LibMultipass for LibMultipass.Record;
     using LibMultipass for bytes;
 
+    constructor() {
+        _disableInitializers();
+    }
+    /**
+     * @notice Initializes the contract with a name, version, and owner address.
+     * This function can only be called once due to the `initializer` modifier.
+     * @param name The name to initialize the contract with.
+     * @param version The version to initialize the contract with.
+     * @param owner The address of the owner of the contract.
+     */
     function initialize(string memory name, string memory version, address owner) external initializer {
         __Ownable_init(owner);
         __EIP712_init(name, version);
@@ -89,7 +100,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     }
 
     /// @inheritdoc IMultipass
-    function activateDomain(bytes32 domainName) public override onlyOwner {
+    function activateDomain(bytes32 domainName) external override onlyOwner {
         _enforseDomainNameIsValid(domainName);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
         _domain.properties.isActive = true;
@@ -119,7 +130,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     }
 
     /// @inheritdoc IMultipass
-    function changeRegistrar(bytes32 domainName, address newRegistrar) public override onlyOwner {
+    function changeRegistrar(bytes32 domainName, address newRegistrar) external override onlyOwner {
         _enforseDomainNameIsValid(domainName);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
         require(newRegistrar != address(0), invalidRegistrar(newRegistrar));
@@ -130,7 +141,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     /// @inheritdoc IMultipass
     function deleteName(
         LibMultipass.NameQuery memory query // bytes32 domainName, // address wallet, // bytes32 username, // bytes32 id
-    ) public override onlyOwner {
+    ) external override onlyOwner {
         _enforseDomainNameIsValid(query.domainName);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(query.domainName);
         query.targetDomain = "";
@@ -152,7 +163,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         uint256 referrerReward,
         uint256 referralDiscount,
         bytes32 domainName
-    ) public override onlyOwner {
+    ) external override onlyOwner {
         _enforseDomainNameIsValid(domainName);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
         (bool status, uint256 result) = Math.tryAdd(referrerReward, referralDiscount);
@@ -215,7 +226,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         emit Registered(_domain.properties.name, newRecord);
     }
     /// @inheritdoc IMultipass
-    function getModifyPrice(LibMultipass.NameQuery memory query) public view override returns (uint256) {
+    function getModifyPrice(LibMultipass.NameQuery memory query) external view override returns (uint256) {
         (bool userExists, LibMultipass.Record memory record) = LibMultipass.resolveRecord(query);
         require(userExists, userNotFound(query));
         return LibMultipass._getModifyPrice(record);
@@ -248,7 +259,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         bytes32 newName,
         bytes memory registrarSignature,
         uint256 signatureDeadline
-    ) public payable override {
+    ) external payable override {
         _enforseDomainNameIsValid(domainName);
         query.targetDomain = domainName;
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(domainName);
@@ -303,6 +314,11 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         return LibMultipass._getContractState();
     }
 
+    /**
+     * @dev Checks if the contract supports a given interface.
+     * @param interfaceId The interface identifier, as specified in ERC-165.
+     * @return bool True if the contract supports the given interface, false otherwise.
+     */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == type(IMultipass).interfaceId || super.supportsInterface(interfaceId);
     }
