@@ -232,7 +232,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         LibMultipass.NameQuery memory query,
         LibMultipass.Record memory record,
         bytes memory registrarSignature
-    ) external payable override nonReentrant{
+    ) external payable override nonReentrant {
         _enforseDomainNameIsValid(record.domainName);
         (bool userExists, LibMultipass.Record memory userRecord) = LibMultipass.resolveRecord(query);
         require(userRecord.nonce < record.nonce, invalidNonceIncrement(userRecord.nonce, record.nonce));
@@ -243,8 +243,11 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
         require(_domain.properties.isActive, domainNotActive(record.domainName));
         require(record.validUntil >= block.timestamp, signatureExpired(record.validUntil));
         emit Renewed(record.wallet, record.domainName, record.id, record);
-        if(_domain.properties.renewalFee > 0){
-            require(msg.value >= _domain.properties.renewalFee, paymentTooLow(_domain.properties.renewalFee, msg.value));
+        if (_domain.properties.renewalFee > 0) {
+            require(
+                msg.value >= _domain.properties.renewalFee,
+                paymentTooLow(_domain.properties.renewalFee, msg.value)
+            );
             (bool success, ) = payable(owner()).call{value: _domain.properties.renewalFee}("");
             require(success, paymendFailed());
         }

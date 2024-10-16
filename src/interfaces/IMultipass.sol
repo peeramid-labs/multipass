@@ -137,7 +137,6 @@ interface IMultipass {
      */
     function changeReferralProgram(uint256 referrerFeeShare, uint256 referralDiscount, bytes32 domainName) external;
 
-
     /**
      * @dev changes renewal fee for domain
      *
@@ -167,7 +166,6 @@ interface IMultipass {
         LibMultipass.NameQuery memory referrer,
         bytes memory referralCode
     ) external payable;
-
 
     /**
      * @dev returns LibMultipass.Domain state variables

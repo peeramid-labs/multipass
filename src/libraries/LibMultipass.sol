@@ -70,7 +70,7 @@ library LibMultipass {
         uint256 validUntil;
     }
 
-    bytes32 constant private MULTIPASS_STORAGE_POSITION = bytes32(uint256(keccak256('multipass.storage.struct')) - 1);
+    bytes32 private constant MULTIPASS_STORAGE_POSITION = bytes32(uint256(keccak256("multipass.storage.struct")) - 1);
 
     /**
      * @dev The domain name of the registrar.
