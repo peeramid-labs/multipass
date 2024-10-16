@@ -239,10 +239,7 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     ) external payable override {
         _enforseDomainNameIsValid(record.domainName);
         (bool userExists, LibMultipass.Record memory userRecord) = LibMultipass.resolveRecord(query);
-        require(
-            userRecord.nonce < record.nonce,
-            invalidNonceIncrement(userRecord.nonce, record.nonce)
-        );
+        require(userRecord.nonce < record.nonce, invalidNonceIncrement(userRecord.nonce, record.nonce));
         require(userRecord.domainName == record.domainName, invalidDomain(userRecord.domainName));
         _validateRecord(record, registrarSignature);
         require(userExists, userNotFound(query));

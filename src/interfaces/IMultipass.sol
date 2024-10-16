@@ -148,7 +148,7 @@ interface IMultipass {
      *  Emits an {registered} event.
      */
     function register(
-       LibMultipass.Record memory newRecord,
+        LibMultipass.Record memory newRecord,
         bytes memory registrarSignature,
         LibMultipass.NameQuery memory referrer,
         bytes memory referralCode
@@ -251,7 +251,6 @@ interface IMultipass {
      */
     event RegistrarChanged(bytes32 indexed domainName, address indexed registrar);
 
-
     /**
      * @dev Emitted when a name is deleted.
      * @param domainName The domain name.
@@ -261,7 +260,6 @@ interface IMultipass {
      */
     event nameDeleted(bytes32 indexed domainName, address indexed wallet, bytes32 indexed id, bytes32 name);
 
-
     /**
      * @dev Emitted when the referral program for a domain is changed.
      * @param domainName The domain name.
@@ -269,7 +267,6 @@ interface IMultipass {
      * @param discount The referral discount amount.
      */
     event ReferralProgramChanged(bytes32 indexed domainName, uint256 reward, uint256 discount);
-
 
     /**
      * @dev Emitted when a domain is registered.
@@ -305,8 +302,12 @@ interface IMultipass {
      * @param id The ID of the record.
      * @param newRecord The new record.
      */
-    event Renewed(address indexed wallet, bytes32 indexed domainName, bytes32 indexed id, LibMultipass.Record newRecord);
-
+    event Renewed(
+        address indexed wallet,
+        bytes32 indexed domainName,
+        bytes32 indexed id,
+        LibMultipass.Record newRecord
+    );
 
     /**
      * @dev Retrieves the domain state by its ID.
@@ -322,7 +323,7 @@ interface IMultipass {
      * @param registrarSignature registrar signature
      */
     function renewRecord(
-         LibMultipass.NameQuery memory query,
+        LibMultipass.NameQuery memory query,
         LibMultipass.Record memory record,
         bytes memory registrarSignature
     ) external payable;
