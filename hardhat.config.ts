@@ -1,10 +1,8 @@
+import 'solidity-coverage';
 import { task } from 'hardhat/config';
 import '@nomicfoundation/hardhat-chai-matchers';
-import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-abi-exporter';
-import { toSignature, isIncluded } from './scripts/diamond';
-import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
 import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
@@ -18,30 +16,6 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
     console.log(account.address);
   }
 });
-
-task('replaceFacet', 'Upgrades facet')
-  .addParam('facet', 'facet')
-  .addParam('address', 'contract address')
-  .setAction(async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
-    await replaceFacet(taskArgs.address, taskArgs.facet, accounts[0]);
-  });
-
-task('addFacet', 'adds a facet')
-  .addParam('facet', 'facet')
-  .addParam('address', 'contract address')
-  .setAction(async (taskArgs, hre) => {
-    const Facet = await hre.ethers.getContractFactory(taskArgs.facet);
-    const accounts = await hre.ethers.getSigners();
-    const facet = await Facet.deploy();
-    await facet.deployed();
-
-    await cutFacets({
-      facets: [facet],
-      diamondAddress: taskArgs.address,
-      signer: accounts[0],
-    });
-  });
 
 export default {
   docgen: {
@@ -116,7 +90,7 @@ export default {
   solidity: {
     compilers: [
       {
-        version: '0.8.20',
+        version: '0.8.28',
         settings: {
           optimizer: {
             enabled: true,
@@ -126,21 +100,6 @@ export default {
       },
     ],
   },
-  diamondAbi: [
-    {
-      // (required) The name of your Diamond ABI
-      name: 'MultipassDiamond',
-      include: ['DNSFacet', 'OwnershipFacet', 'DiamondLoupeFacet', 'EIP712InspectorFacet'],
-      // We explicitly set `strict` to `true` because we want to validate our facets don't accidentally provide overlapping functions
-      strict: true,
-      // We use our diamond utils to filter some functions we ignore from the combined ABI
-      filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
-        // const changes = new diamondUtils.DiamondChanges();
-        const signature = toSignature(abiElement);
-        return isIncluded(fullyQualifiedName, signature);
-      },
-    },
-  ],
   typechain: {
     outDir: 'types',
     target: 'ethers-v5',

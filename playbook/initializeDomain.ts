@@ -1,5 +1,5 @@
 import { task, types } from 'hardhat/config';
-import { MultipassDiamond } from '../types';
+import { Multipass } from '../types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('initializeDomain', 'Initialize domain name and activate it')
@@ -20,7 +20,15 @@ task('initializeDomain', 'Initialize domain name and activate it')
         discount,
         registrarAddress,
         activate,
-      }: { domain: string; freeRegistrationsNumber: string; fee: string; reward: string; discount: string; registrarAddress: string; activate: boolean },
+      }: {
+        domain: string;
+        freeRegistrationsNumber: string;
+        fee: string;
+        reward: string;
+        discount: string;
+        registrarAddress: string;
+        activate: boolean;
+      },
       hre,
     ) => {
       const { deployments, getNamedAccounts } = hre;
@@ -31,22 +39,20 @@ task('initializeDomain', 'Initialize domain name and activate it')
         multipassDeployment.address,
         multipassDeployment.abi,
         hre.ethers.provider.getSigner(owner),
-      ) as MultipassDiamond;
+      ) as Multipass;
       const tx = await multipassContract.initializeDomain(
         registrarAddress,
         freeRegistrationsNumber,
-        hre.ethers.utils.parseEther(fee),
         hre.ethers.utils.formatBytes32String(domain),
         hre.ethers.utils.parseEther(reward),
         hre.ethers.utils.parseEther(discount),
       );
       console.log(tx.wait(1));
 
-      if(activate === true) {
-        const tx = await multipassContract
-          .activateDomain(hre.ethers.utils.formatBytes32String(domain));
+      if (activate) {
+        const tx = await multipassContract.activateDomain(hre.ethers.utils.formatBytes32String(domain));
         console.log(tx.wait(1));
-        console.log('Domain name "' + domain + '" successfully initialized and activated!')
+        console.log('Domain name "' + domain + '" successfully initialized and activated!');
       }
     },
   );

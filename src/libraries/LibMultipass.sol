@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+/**
+ * @title LibMultipass
+ * @notice Library for handling multipass functionality.
+ *
+ * This library provides a set of functions to manage and utilize multipass features.
+ * It is designed to be used as a part of the multipass system within the project.
+ * @custom:security-contact sirt@peeramid.xyz
+ */
 library LibMultipass {
     /**
      * @dev resolves user from any given argument
@@ -28,7 +36,6 @@ library LibMultipass {
      * @dev The domain name of the registrar.
      * @param registrar is the address private key of which is owned by signing server (e.g. Discord bot server)
      * @param name is unique string that is used to find this domain within domains.
-     * @param freeRegistrationsNumber is the number of free registrations for this domain
 
      * @param fee amount of payment requried to register name in the domain
      * @param ttl time to live for changes in the domain properties
@@ -37,13 +44,13 @@ library LibMultipass {
     struct Domain {
         bytes32 name; //32bytes
         uint256 fee; //32bytes
-        uint256 freeRegistrationsNumber; //32bytes
         uint256 referrerReward; //32bytes
         uint256 referralDiscount; //32bytes
         bool isActive; //1byte
         address registrar; //20 bytes
         uint24 ttl; //3 bytes (not being used for now)
         uint256 registerSize; //32bytes
+        uint256 renewalFee; //32bytes
     }
 
     /**
@@ -53,18 +60,17 @@ library LibMultipass {
      * @param id is the unique identificator of the user
      * @param nonce is the number of changes in the user record
      * @param domainName is the domain name of the registrar
-    **/
+     **/
     struct Record {
         address wallet;
         bytes32 name;
         bytes32 id;
         uint96 nonce;
         bytes32 domainName;
+        uint256 validUntil;
     }
 
-
-
-    bytes32 constant MULTIPASS_STORAGE_POSITION = keccak256("multipass.diamond.storage.position");
+    bytes32 private constant MULTIPASS_STORAGE_POSITION = bytes32(uint256(keccak256("multipass.storage.struct")) - 1);
 
     /**
      * @dev The domain name of the registrar.
@@ -84,9 +90,8 @@ library LibMultipass {
         mapping(address => bytes32) addressToId; //N*32 bytes
         mapping(bytes32 => bytes32) nameToId; //N*32 bytes
         mapping(bytes32 => bytes32) idToName; //N*32 bytes
-        //Total: 128+N*160 Bytes
+        mapping(address => uint256) validUntil; //N*32 bytes
     }
-
 
     /**
      * @dev The storage structure for the Multipass contract.
@@ -102,7 +107,7 @@ library LibMultipass {
     /**
      * @dev Returns the storage struct for the Multipass contract.
      */
-    function MultipassStorage() internal pure returns (MultipassStorageStruct storage es) {
+    function MultipassStorage() private pure returns (MultipassStorageStruct storage es) {
         bytes32 position = MULTIPASS_STORAGE_POSITION;
         assembly {
             es.slot := position
@@ -113,14 +118,6 @@ library LibMultipass {
         keccak256("registerName(bytes32 name,bytes32 id,bytes32 domainName,uint256 deadline,uint96 nonce)");
     bytes32 internal constant _TYPEHASH_REFERRAL = keccak256("proofOfReferrer(address referrerAddress)");
 
-    function _checkStringFits32b(string memory value) internal pure returns (bool) {
-        if (bytes(value).length <= 32) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     function _checkNotEmpty(bytes32 value) internal pure returns (bool) {
         if (value == "") {
             return false;
@@ -128,7 +125,6 @@ library LibMultipass {
             return true;
         }
     }
-
 
     /**
      * @dev Resolves the index of a domain name in the Multipass storage.
@@ -148,31 +144,24 @@ library LibMultipass {
 
     function _initializeDomain(
         address registrar,
-        uint256 freeRegistrationsNumber,
         uint256 fee,
+        uint256 renewalFee,
         bytes32 domainName,
         uint256 referrerReward,
         uint256 referralDiscount
     ) internal {
-        LibMultipass.MultipassStorageStruct storage ms = LibMultipass.MultipassStorage();
+        LibMultipass.MultipassStorageStruct storage ms = MultipassStorage();
 
         uint256 domainIndex = ms.numDomains + 1;
         LibMultipass.DomainStorage storage _domain = ms.domains[domainIndex];
         _domain.properties.registrar = registrar;
-        _domain.properties.freeRegistrationsNumber = freeRegistrationsNumber;
         _domain.properties.fee = fee;
         _domain.properties.name = domainName;
         _domain.properties.referrerReward = referrerReward;
         _domain.properties.referralDiscount = referralDiscount;
+        _domain.properties.renewalFee = renewalFee;
         ms.numDomains++;
         ms.domainNameToIndex[domainName] = domainIndex;
-    }
-
-    function _getModifyPrice(LibMultipass.Record memory userRecord) internal view returns (uint256) {
-        LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(userRecord.domainName);
-        uint256 feeCoefficient = _domain.properties.fee / 10;
-        uint256 nonceCoefficient = userRecord.nonce * userRecord.nonce;
-        return ((feeCoefficient * nonceCoefficient) + _domain.properties.fee);
     }
 
     function _resolveRecord(NameQuery memory query) private view returns (bool, Record memory) {
@@ -222,6 +211,7 @@ library LibMultipass {
         domain.idToName[record.id] = record.name;
         domain.nameToId[record.name] = record.id;
         domain.nonce[record.id] += 1;
+        domain.validUntil[record.wallet] = record.validUntil;
     }
 
     function _resolveFromAddress(
@@ -235,6 +225,7 @@ library LibMultipass {
         resolved.nonce = _domain.nonce[resolved.id];
         resolved.wallet = _address;
         resolved.domainName = _domain.properties.name;
+        resolved.validUntil = _domain.validUntil[_address];
 
         if (resolved.id == bytes32(0)) {
             return (false, resolved);
@@ -244,24 +235,15 @@ library LibMultipass {
     /**
      * @dev Resolves the record of a user.
      * @param _record The record to resolve the query for.
-     * @param _domainName The domain name to resolve the query for.
      * @return query result.
      */
-    function queryFromRecord(Record memory _record, bytes32 _domainName) internal pure returns (NameQuery memory) {
+    function queryFromRecord(Record memory _record) internal pure returns (NameQuery memory) {
         NameQuery memory _query;
         _query.id = _record.id;
-        _query.domainName = _domainName;
+        _query.domainName = _record.domainName;
         _query.name = _record.name;
         _query.wallet = _record.wallet;
         return _query;
-    }
-
-    /**
-     * @dev Checks if user should register for free.
-     * @param domain The wallet to resolve the query for.
-     */
-    function shouldRegisterForFree(DomainStorage storage domain) internal view returns (bool) {
-        return domain.properties.freeRegistrationsNumber > domain.properties.registerSize ? true : false;
     }
 
     function _registerNew(Record memory newRecord, DomainStorage storage domain) internal {
@@ -270,7 +252,7 @@ library LibMultipass {
     }
 
     function _getContractState() internal view returns (uint256) {
-        LibMultipass.MultipassStorageStruct storage ms = LibMultipass.MultipassStorage();
+        LibMultipass.MultipassStorageStruct storage ms = MultipassStorage();
         return ms.numDomains;
     }
 
