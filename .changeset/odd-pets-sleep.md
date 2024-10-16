@@ -1,5 +1,5 @@
 ---
-'@peeramid-labs/multipass': major
+'@peeramid-labs/multipass': minor
 ---
 
 - Added `validUntil` property to domain records
