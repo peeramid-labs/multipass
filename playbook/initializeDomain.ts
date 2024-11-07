@@ -40,7 +40,6 @@ task('initializeDomain', 'Initialize domain name and activate it')
         multipassDeployment.abi,
         hre.ethers.provider.getSigner(owner),
       ) as Multipass;
-    
       const tx = await multipassContract.initializeDomain(
         registrarAddress,
         hre.ethers.utils.parseEther(fee),
@@ -49,11 +48,11 @@ task('initializeDomain', 'Initialize domain name and activate it')
         hre.ethers.utils.parseEther(reward),
         hre.ethers.utils.parseEther(discount),
       );
-      console.log(tx.wait(1));
+      console.log(await tx.wait(1));
 
       if (activate) {
         const tx = await multipassContract.activateDomain(hre.ethers.utils.formatBytes32String(domain));
-        console.log(tx.wait(1));
+        console.log(await tx.wait(1));
         console.log('Domain name "' + domain + '" successfully initialized and activated!');
       }
     },
