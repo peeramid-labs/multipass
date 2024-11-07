@@ -5,8 +5,8 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 task('initializeDomain', 'Initialize domain name and activate it')
   .addOptionalParam('registrarAddress', 'Registrar address')
   .addOptionalParam('domain', 'Domain name to register', 'Rankify.it')
-  .addOptionalParam('freeRegistrationsNumber', 'Free registration count number', '1000')
   .addOptionalParam('fee', 'Fee  amount in base currency of network', '0')
+  .addOptionalParam('renewalFee', 'Renewal fee amount in base currency of network', '0')
   .addOptionalParam('reward', 'Referral share in base currency of network', '0')
   .addOptionalParam('discount', 'Discount in base currency of network', '0')
   .addOptionalParam('activate', 'Discount in base currency of network', true, types.boolean)
@@ -14,22 +14,22 @@ task('initializeDomain', 'Initialize domain name and activate it')
     async (
       {
         domain,
-        freeRegistrationsNumber,
         fee,
+        renewalFee,
         reward,
         discount,
         registrarAddress,
         activate,
       }: {
         domain: string;
-        freeRegistrationsNumber: string;
         fee: string;
+        renewalFee: string;
         reward: string;
         discount: string;
         registrarAddress: string;
         activate: boolean;
       },
-      hre,
+      hre: HardhatRuntimeEnvironment,
     ) => {
       const { deployments, getNamedAccounts } = hre;
       const { owner, registrar } = await getNamedAccounts();
@@ -42,16 +42,17 @@ task('initializeDomain', 'Initialize domain name and activate it')
       ) as Multipass;
       const tx = await multipassContract.initializeDomain(
         registrarAddress,
-        freeRegistrationsNumber,
+        hre.ethers.utils.parseEther(fee),
+        hre.ethers.utils.parseEther(renewalFee),
         hre.ethers.utils.formatBytes32String(domain),
         hre.ethers.utils.parseEther(reward),
         hre.ethers.utils.parseEther(discount),
       );
-      console.log(tx.wait(1));
+      console.log(await tx.wait(1));
 
       if (activate) {
         const tx = await multipassContract.activateDomain(hre.ethers.utils.formatBytes32String(domain));
-        console.log(tx.wait(1));
+        console.log(await tx.wait(1));
         console.log('Domain name "' + domain + '" successfully initialized and activated!');
       }
     },
