@@ -301,7 +301,7 @@ interface RegisterMessage {
   name: BytesLike;
   id: BytesLike;
   domainName: BytesLike;
-  deadline: BigNumber;
+  validUntil: BigNumber;
   nonce: BigNumber;
 }
 
@@ -472,7 +472,7 @@ export const getUserRegisterProps = async ({
   account,
   registrar,
   domainName,
-  deadline,
+  validUntil,
   multipassAddress,
   referrer,
   referrerDomain,
@@ -481,7 +481,7 @@ export const getUserRegisterProps = async ({
   account: SignerIdentity;
   registrar: SignerIdentity;
   domainName: string;
-  deadline: number;
+  validUntil: number;
   multipassAddress: string;
   referrer?: SignerIdentity;
   referrerDomain?: string;
@@ -491,7 +491,7 @@ export const getUserRegisterProps = async ({
     name: ethers.utils.formatBytes32String(account.name + `.` + domainName),
     id: ethers.utils.formatBytes32String(account.id + `.` + domainName),
     domainName: ethers.utils.formatBytes32String(domainName),
-    deadline: ethers.BigNumber.from(deadline),
+    validUntil: ethers.BigNumber.from(validUntil),
     nonce: ethers.BigNumber.from(nonce ?? 0),
   };
 
@@ -503,7 +503,7 @@ export const getUserRegisterProps = async ({
     wallet: account.wallet.address,
     nonce: ethers.BigNumber.from(nonce ?? 0),
     domainName: ethers.utils.formatBytes32String(domainName),
-    validUntil: ethers.BigNumber.from(deadline),
+    validUntil: ethers.BigNumber.from(validUntil),
   };
 
   const referrerData: LibMultipass.NameQueryStruct = {

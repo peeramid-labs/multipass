@@ -103,7 +103,7 @@ describe(scriptName, () => {
       name: ethers.utils.formatBytes32String(adr.player1.name),
       id: ethers.utils.formatBytes32String(adr.player1.id),
       domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-      deadline: ethers.BigNumber.from(blockTimestamp + 9999),
+      validUntil: ethers.BigNumber.from(blockTimestamp + 9999),
       nonce: ethers.BigNumber.from(0),
     };
 
@@ -119,7 +119,7 @@ describe(scriptName, () => {
       wallet: adr.player1.wallet.address,
       nonce: 0,
       domainName: ethers.utils.formatBytes32String('invalidDomain'),
-      validUntil: registrarMessage.deadline,
+      validUntil: registrarMessage.validUntil,
     };
 
     await expect(
@@ -331,7 +331,7 @@ describe(scriptName, () => {
           name: ethers.utils.formatBytes32String(adr.player1.name),
           id: ethers.utils.formatBytes32String(adr.player1.id),
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          deadline: ethers.BigNumber.from(blockTimestamp + 9999),
+          validUntil: ethers.BigNumber.from(blockTimestamp + 9999),
           nonce: ethers.BigNumber.from(0),
         };
 
@@ -343,7 +343,7 @@ describe(scriptName, () => {
           wallet: adr.player1.wallet.address,
           nonce: 0,
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          validUntil: registrarMessage.deadline,
+          validUntil: registrarMessage.validUntil,
         };
 
         await expect(
@@ -360,7 +360,7 @@ describe(scriptName, () => {
           name: ethers.utils.formatBytes32String(adr.player1.name),
           id: ethers.utils.formatBytes32String(adr.player1.id),
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          deadline: ethers.BigNumber.from(blockTimestamp + 9999),
+          validUntil: ethers.BigNumber.from(blockTimestamp + 9999),
           nonce: ethers.BigNumber.from(0),
         };
 
@@ -376,7 +376,7 @@ describe(scriptName, () => {
           wallet: adr.player1.wallet.address,
           nonce: 0,
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          validUntil: registrarMessage.deadline,
+          validUntil: registrarMessage.validUntil,
         };
 
         await expect(
@@ -385,7 +385,7 @@ describe(scriptName, () => {
             .register(applicantData, invalidRegistrarSignature, emptyUserQuery, ethers.constants.HashZero),
         ).to.be.revertedWithCustomError(env.multipass, 'invalidSignature');
 
-        registrarMessage.deadline = ethers.BigNumber.from(ethers.provider.blockNumber);
+        registrarMessage.validUntil = ethers.BigNumber.from(ethers.provider.blockNumber);
 
         // await expect(
         //   env.multipass
@@ -394,18 +394,18 @@ describe(scriptName, () => {
         //       applicantData,
         //       registrarMessage.domainName,
         //       await signRegistrarMessage(registrarMessage, env.multipass.address, adr.registrar1),
-        //       registrarMessage.deadline,
+        //       registrarMessage.validUntil,
         //       emptyUserQuery,
         //       ethers.constants.HashZero,
         //     ),
-        // ).to.be.revertedWith('Multipass->register: Deadline is less than current block number');
+        // ).to.be.revertedWith('Multipass->register: ValidUntil is less than current block number');
       });
       it('Reverts if signature is outdated', async () => {
         const registrantProps1 = await getUserRegisterProps({
           account: adr.player2,
           registrar: adr.registrar1,
           domainName: NEW_DOMAIN_NAME1,
-          deadline: 1,
+          validUntil: 1,
           multipassAddress: env.multipass.address,
         });
         await expect(
@@ -456,7 +456,7 @@ describe(scriptName, () => {
             account: adr.player1,
             registrar: adr.registrar1,
             domainName: NEW_DOMAIN_NAME1,
-            deadline: blockTimestamp + 999999999,
+            validUntil: blockTimestamp + 999999999,
             multipassAddress: env.multipass.address,
           });
 
@@ -532,7 +532,7 @@ describe(scriptName, () => {
             account: adr.player1,
             registrar: adr.registrar1,
             domainName: NEW_DOMAIN_NAME1,
-            deadline: blockTimestamp + 100,
+            validUntil: blockTimestamp + 100,
             multipassAddress: env.multipass.address,
           });
 
@@ -554,7 +554,7 @@ describe(scriptName, () => {
             account: adr.player1,
             registrar: adr.registrar1,
             domainName: NEW_DOMAIN_NAME1,
-            deadline: blockTimestamp + 100,
+            validUntil: blockTimestamp + 100,
             multipassAddress: env.multipass.address,
             nonce: 2,
           });
@@ -575,7 +575,7 @@ describe(scriptName, () => {
             account: adr.player1,
             registrar: adr.registrar1,
             domainName: NEW_DOMAIN_NAME1,
-            deadline: blockTimestamp + 99999,
+            validUntil: blockTimestamp + 99999,
             multipassAddress: env.multipass.address,
           });
           await expect(
@@ -601,7 +601,7 @@ describe(scriptName, () => {
             account: adr.player2,
             registrar: adr.registrar1,
             domainName: NEW_DOMAIN_NAME1,
-            deadline: blockTimestamp + 99999,
+            validUntil: blockTimestamp + 99999,
             multipassAddress: env.multipass.address,
             referrer: adr.player1,
           });
@@ -655,7 +655,7 @@ describe(scriptName, () => {
               account: adr.player2,
               registrar: adr.registrar1,
               domainName: NEW_DOMAIN_NAME1,
-              deadline: blockTimestamp + 99999,
+              validUntil: blockTimestamp + 99999,
               multipassAddress: env.multipass.address,
             });
             await env.multipass
@@ -671,7 +671,7 @@ describe(scriptName, () => {
               account: adr.player2,
               registrar: adr.registrar1,
               domainName: NEW_DOMAIN_NAME2,
-              deadline: blockTimestamp + 99999,
+              validUntil: blockTimestamp + 99999,
               multipassAddress: env.multipass.address,
               referrer: adr.player2,
               referrerDomain: NEW_DOMAIN_NAME1,
@@ -680,7 +680,7 @@ describe(scriptName, () => {
               account: adr.player2,
               registrar: adr.registrar1,
               domainName: NEW_DOMAIN_NAME1,
-              deadline: blockTimestamp + 99999,
+              validUntil: blockTimestamp + 99999,
               multipassAddress: env.multipass.address,
               referrer: adr.player2,
             });
@@ -702,7 +702,7 @@ describe(scriptName, () => {
               account: adr.player1,
               registrar: adr.registrar1,
               domainName: NEW_DOMAIN_NAME2,
-              deadline: blockTimestamp + 99999,
+              validUntil: blockTimestamp + 99999,
               multipassAddress: env.multipass.address,
             });
             await expect(
@@ -736,7 +736,7 @@ describe(scriptName, () => {
           account: adr.player1,
           registrar: adr.registrar1,
           domainName: NEW_DOMAIN_NAME1,
-          deadline: blockTimestamp + 99999,
+          validUntil: blockTimestamp + 99999,
           multipassAddress: env.multipass.address,
         });
         await expect(
@@ -756,7 +756,7 @@ describe(scriptName, () => {
           account: adr.player1,
           registrar: adr.registrar1,
           domainName: NEW_DOMAIN_NAME1,
-          deadline: blockTimestamp + 99999,
+          validUntil: blockTimestamp + 99999,
           multipassAddress: env.multipass.address,
         });
         const balanceBefore = await ethers.provider.getBalance(adr.multipassOwner.wallet.address);
@@ -777,7 +777,7 @@ describe(scriptName, () => {
           account: adr.player1,
           registrar: adr.registrar1,
           domainName: NEW_DOMAIN_NAME1,
-          deadline: blockTimestamp + 99999,
+          validUntil: blockTimestamp + 99999,
           multipassAddress: env.multipass.address,
         });
         await expect(
