@@ -1,6 +1,6 @@
 import { ethers, BigNumber, Wallet, BytesLike } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { LibMultipass } from '../types/src/facets/DNSFacet';
+import { LibMultipass } from '../types/src/Multipass';
 export enum SearchCriteria {
   id,
   username,
@@ -86,7 +86,7 @@ export class MultipassJs {
         },
         {
           type: 'uint256',
-          name: 'deadline',
+          name: 'validUntil',
         },
         {
           type: 'uint96',
