@@ -115,7 +115,7 @@ library LibMultipass {
     }
 
     bytes32 internal constant _TYPEHASH =
-        keccak256("registerName(bytes32 name,bytes32 id,bytes32 domainName,uint256 deadline,uint96 nonce)");
+        keccak256("registerName(bytes32 name,bytes32 id,bytes32 domainName,uint256 validUntil,uint96 nonce)");
     bytes32 internal constant _TYPEHASH_REFERRAL = keccak256("proofOfReferrer(address referrerAddress)");
 
     function _checkNotEmpty(bytes32 value) internal pure returns (bool) {
