@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+        "name": "Debug hardhat ts script",
+        "type": "node",
+        "request": "launch",
+        "console": "integratedTerminal",
+        "runtimeExecutable": "pnpm",
+        "runtimeArgs": [
+          "hardhat",
+          "run",
+          "${file}",
+          "--network",	
+          "localhost"
+        ]
+      }
+  ]
+}
