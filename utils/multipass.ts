@@ -1,24 +1,28 @@
 import { ethers, BigNumber, Wallet, BytesLike } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { LibMultipass } from '../types/src/Multipass';
+
 export enum SearchCriteria {
   id,
   username,
   address,
 }
+
 export interface SignerIdentity {
   name: string;
   id: string;
   wallet: Wallet | SignerWithAddress;
 }
+
 interface ReferrerMesage {
   referrerAddress: string;
 }
-interface RegisterMessage {
+
+export interface RegisterMessage {
   name: BytesLike;
   id: BytesLike;
   domainName: BytesLike;
-  deadline: BigNumber;
+  validUntil: BigNumber;
   nonce: BigNumber;
 }
 
