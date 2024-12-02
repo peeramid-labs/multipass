@@ -104,6 +104,3 @@ task('initializeDomain', 'Initialize domain name and activate it')
   );
 
 export default {};
-
-
-0x1c43f2D1ff0Fcc12a351A50889813fE47f683607
