@@ -2,4 +2,4 @@
 '@peeramid-labs/multipass': patch
 ---
 
-Register username playbook
+added deployment artifacts
