@@ -3,7 +3,6 @@ import { Multipass } from '../types';
 import { LibMultipass } from '../types/src/Multipass';
 import crypto from "crypto";
 import { signRegistrarMessage } from "../playbook/utils/utils";
-import { ethers } from 'ethers';
 
 task('initializeDomain', 'Initialize domain name and activate it')
   .addOptionalParam('registrarAddress', 'Registrar address')
