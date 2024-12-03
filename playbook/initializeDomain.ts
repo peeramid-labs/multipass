@@ -74,7 +74,7 @@ task('initializeDomain', 'Initialize domain name and activate it')
           name: hre.ethers.utils.formatBytes32String(username),
           id: hre.ethers.utils.formatBytes32String(playerId),
           domainName: hre.ethers.utils.formatBytes32String(domain),
-          validUntil: ethers.BigNumber.from(Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)),
+          validUntil: hre.ethers.BigNumber.from(Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)),
           nonce: hre.ethers.BigNumber.from(0),
         };
         let signer = await hre.ethers.getSigner(registrar);
