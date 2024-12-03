@@ -1,5 +1,13 @@
 # @peeramid-labs/multipass
 
+## 0.3.1
+
+### Patch Changes
+
+- [`7f56fd2b1a1caf6f86a025874bd1326927a632bd`](https://github.com/peeramid-labs/multipass/commit/7f56fd2b1a1caf6f86a025874bd1326927a632bd) Thanks [@peersky](https://github.com/peersky)! - added deployment artifacts
+
+- [#20](https://github.com/peeramid-labs/multipass/pull/20) [`d2145575c7207b4a40cd6d7b3c1687280b9c2cb7`](https://github.com/peeramid-labs/multipass/commit/d2145575c7207b4a40cd6d7b3c1687280b9c2cb7) Thanks [@theKosmoss](https://github.com/theKosmoss)! - Register username playbook
+
 ## 0.3.0
 
 ### Minor Changes
