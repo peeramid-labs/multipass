@@ -1,5 +1,11 @@
 # @peeramid-labs/multipass
 
+## 0.3.2
+
+### Patch Changes
+
+- [#26](https://github.com/peeramid-labs/multipass/pull/26) [`4ece252cec47b55f9a824f613cd2207ec2db6e7d`](https://github.com/peeramid-labs/multipass/commit/4ece252cec47b55f9a824f613cd2207ec2db6e7d) Thanks [@peersky](https://github.com/peersky)! - added viem compatible abi export during compilation
+
 ## 0.3.1
 
 ### Patch Changes
