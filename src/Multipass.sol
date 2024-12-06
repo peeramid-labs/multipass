@@ -194,10 +194,23 @@ contract Multipass is ERC165Upgradeable, EIP712Upgradeable, IMultipass, Reentran
     ) external payable override nonReentrant {
         _enforseDomainNameIsValid(newRecord.domainName);
         //Check query does not resolves (name already exists)
+
         {
             LibMultipass.NameQuery memory query = LibMultipass.queryFromRecord(newRecord);
-            (bool success, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
-            require(!success, recordExists(r));
+            {
+                (bool success, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
+                require(!success, recordExists(r));
+            }
+            {
+                query.wallet = address(0);
+                (bool success, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
+                require(!success, recordExists(r));
+            }
+            {
+                query.id = bytes32(0);
+                (bool success, LibMultipass.Record memory r) = LibMultipass.resolveRecord(query);
+                require(!success, recordExists(r));
+            }
         }
         _validateRecord(newRecord, registrarSignature);
         LibMultipass.DomainStorage storage _domain = LibMultipass._getDomainStorage(newRecord.domainName);

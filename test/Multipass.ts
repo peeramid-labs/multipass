@@ -792,6 +792,48 @@ describe(scriptName, () => {
             ),
         ).to.be.revertedWithCustomError(env.multipass, 'paymentTooLow');
       });
+      it.only('Should prevent registration with same user id but different wallet', async () => {
+        const registrantProps1 = await getUserRegisterProps({
+          account: { ...adr.player1, id: ethers.utils.formatBytes32String('different-id') },
+          registrar: adr.registrar1,
+          domainName: NEW_DOMAIN_NAME1,
+          validUntil: blockTimestamp + 99999,
+          nonce: 1,
+          multipassAddress: env.multipass.address,
+        });
+
+        await env.multipass
+          .connect(adr.player1.wallet)
+          .register(
+            registrantProps1.applicantData,
+            registrantProps1.validSignature,
+            registrantProps1.referrerData,
+            registrantProps1.referrerSignature,
+            { value: DEFAULT_FEE },
+          );
+
+        // Try to register with same username but different wallet
+        const registrantProps2 = await getUserRegisterProps({
+          account: { ...adr.player2, id: ethers.utils.formatBytes32String('different-id') },
+          registrar: adr.registrar1,
+          domainName: NEW_DOMAIN_NAME1,
+          validUntil: blockTimestamp + 99999,
+          nonce: 1,
+          multipassAddress: env.multipass.address,
+        });
+
+        await expect(
+          env.multipass
+            .connect(adr.player2.wallet)
+            .register(
+              registrantProps2.applicantData,
+              registrantProps2.validSignature,
+              registrantProps2.referrerData,
+              registrantProps2.referrerSignature,
+              { value: DEFAULT_FEE },
+            ),
+        ).to.be.revertedWithCustomError(env.multipass, 'recordExists');
+      });
     });
   });
 });
