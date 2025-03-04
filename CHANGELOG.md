@@ -1,5 +1,13 @@
 # @peeramid-labs/multipass
 
+## 0.3.3
+
+### Patch Changes
+
+- [#27](https://github.com/peeramid-labs/multipass/pull/27) [`7dce7540ff7f28bbaea7c135e14459c261890d02`](https://github.com/peeramid-labs/multipass/commit/7dce7540ff7f28bbaea7c135e14459c261890d02) Thanks [@peersky](https://github.com/peersky)! - added boundry case protection for registering collusions
+
+- [#31](https://github.com/peeramid-labs/multipass/pull/31) [`03583120cd860a38aecb8c1a86d221b6049e7a25`](https://github.com/peeramid-labs/multipass/commit/03583120cd860a38aecb8c1a86d221b6049e7a25) Thanks [@peersky](https://github.com/peersky)! - deployment to arbitrum sepolia
+
 ## 0.3.2
 
 ### Patch Changes
