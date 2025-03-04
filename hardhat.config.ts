@@ -12,7 +12,10 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-docgen';
 import './playbook';
-
+import { ErrorFragment, EventFragment, FormatTypes, FunctionFragment, JsonFragment } from '@ethersproject/abi';
+import fs from 'fs';
+import path from 'path';
+import { ethers } from 'ethers';
 type ContractMap = Record<string, { abi: object }>;
 
 subtask(TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS).setAction(async (args, env, next) => {
@@ -30,6 +33,7 @@ subtask(TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS).setAction(async (args, env, next) 
     }
   });
   await Promise.all(promises);
+  getSuperInterface('./abi/super.json');
   return output;
 });
 
@@ -40,6 +44,51 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
     console.log(account.address);
   }
 });
+
+const getSuperInterface = (outputPath?: string) => {
+  let mergedArray: JsonFragment[] = [];
+  function readDirectory(directory: string) {
+    const files = fs.readdirSync(directory);
+
+    files.forEach(file => {
+      const fullPath = path.join(directory, file);
+      if (fs.statSync(fullPath).isDirectory()) {
+        readDirectory(fullPath); // Recurse into subdirectories
+      } else if (path.extname(file) === '.json') {
+        const fileContents = require('./' + fullPath); // Load the JSON file
+        if (Array.isArray(fileContents)) {
+          mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
+        }
+      }
+    });
+  }
+  const originalConsoleLog = console.log;
+  readDirectory('./abi');
+  console.log = () => {}; // avoid noisy output
+  const result = new ethers.utils.Interface(mergedArray);
+  if (outputPath) {
+    fs.writeFileSync(outputPath, JSON.stringify(result.format(FormatTypes.full), null, 2));
+  }
+  console.log = originalConsoleLog;
+  return result;
+};
+
+task('getSuperInterface', 'Prints the super interface of a contract')
+  .setAction(async (taskArgs: { outputPathAbi: string }, hre) => {
+    const su = getSuperInterface(taskArgs.outputPathAbi);
+    let return_value: Record<string, string> = {};
+    Object.values(su.functions).forEach(x => {
+      return_value[su.getSighash(x.format())] = x.format(FormatTypes.full);
+    });
+    Object.values(su.events).forEach(x => {
+      return_value[su.getEventTopic(x)] = x.format(FormatTypes.full);
+    });
+    Object.values(su.errors).forEach(x => {
+      return_value[su.getSighash(x)] = x.format(FormatTypes.full);
+    });
+    console.log(JSON.stringify(return_value, null, 2));
+  })
+  .addParam('outputPathAbi', 'The path to the abi file');
 
 export default {
   docgen: {
@@ -110,9 +159,21 @@ export default {
         mnemonic: process.env.ANVIL_MNEMONIC ?? 'x',
       },
     },
+    buildbear: {
+      name: 'buildbear',
+      accounts: {
+        mnemonic: process.env.BUILDBEAR_MNEMONIC ?? 'x',
+      },
+      url: process.env.BUILDBEAR_RPC_URL ?? '',
+    },
   },
   paths: {
     sources: './src',
+  },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: true,
   },
   solidity: {
     compilers: [
