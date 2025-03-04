@@ -63,13 +63,16 @@ export default {
       hardhat: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
       anvil: '0x6Cf8d74C7875de8C2FfB09228F4bf2A21b25e583',
       default: '0xF52E5dF676f51E410c456CC34360cA6F27959420', //TODO this must be set for networks
+      arbsepolia: '0x6Cf8d74C7875de8C2FfB09228F4bf2A21b25e583',
     },
     owner: {
       default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
       anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
+      arbsepolia: '0x6Cf8d74C7875de8C2FfB09228F4bf2A21b25e583',
     },
     registrar: {
       localhost: '0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9',
+      arbsepolia: '0x98fBE64861B331674e195E1A0b2fA303324c83e1',
     },
     defaultPlayer: {
       localhost: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
@@ -86,17 +89,18 @@ export default {
       url: 'https://matic-mumbai.chainstacklabs.com',
       accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
     },
-    matic: {
-      url: process.env.RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
-    },
-    ganache: {
-      url: process.env.GANACHE_RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
-    },
-    goerli: {
-      url: process.env.RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
+    arbsepolia: {
+      name: 'arbitrum sepolia',
+      url: process.env.ARB_SEPOLIA_RPC_URL ?? '',
+      accounts: {
+        mnemonic: process.env.ARB_SEPOLIA_MNEMONIC ?? 'x',
+      },
+      verify: {
+        etherscan: {
+          apiKey: process.env.ARB_SEPOLIA_ETHERSCAN_API_KEY ?? '',
+          apiUrl: 'https://api-sepolia.arbiscan.io/',
+        },
+      },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
@@ -121,7 +125,7 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200000,
+            runs: 2000,
           },
         },
       },
@@ -138,8 +142,6 @@ export default {
     runOnCompile: true,
     clear: true,
     format: 'json',
-    // flat: true,
-    // only: [":ERC20$"],
     spacing: 2,
     pretty: false,
   },
